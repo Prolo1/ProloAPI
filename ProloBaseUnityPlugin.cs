@@ -1,38 +1,45 @@
 ﻿
 
+using System.Collections.Generic;
+
 using BepInEx;
 using BepInEx.Logging;
 
+using ProloAPI.Extentions;
+
 namespace ProloAPI
 {
-	public class ProloBaseUnityPlugin : BaseUnityPlugin
+	public abstract class ProloBaseUnityPlugin : BaseUnityPlugin
 	{
 
-		public class ProloInfoBase {
+		public class ProloInfo
+		{
 			public string ModName;
 			public string GUID;//never change this
 			public string Version;
-
-			public ManualLogSource Logger;
-
-			public IConfiguration cfg;
-
-			internal ProloBaseUnityPlugin instance { get;   set; }
-		
-		}
-		public class ProloInfo<T>:ProloInfoBase where T : ProloBaseUnityPlugin
-		{
-
-			public T Instance { get => (T)instance; set => instance = value; }
 		}
 
-		public   static ProloInfoBase PInfoBase { get; protected set; }
+		public ProloInfo info { get; protected set; }
+
+		public static ICollection<ILogSource> Loggers { get => BepInEx.Logging.Logger.Sources; }
+		public static ICollection<ProloBaseUnityPlugin> Instances { get; } = new List<ProloBaseUnityPlugin>();
+		public IConfiguration cfg { get; protected set; }
+
+
+
+
+
 	}
 
-	public class ProloUnityPlugin<T> : ProloBaseUnityPlugin where T : ProloBaseUnityPlugin
+	public abstract class ProloUnityPlugin<T1, T2> : ProloBaseUnityPlugin where T1 : ProloBaseUnityPlugin where T2 : IConfiguration
 	{
+		public static T1 Instance { get => (T1)Instances.FirstOrNull(t => t is T1); protected set { Instances.Remove(Instance); Instances.Add(value); } }
+		public new T2 cfg { get => (T2)base.cfg; protected set { base.cfg = value; } }
+		
+		private ManualLogSource _logger = null;
+		public new ManualLogSource Logger { get => _logger = _logger ?? 
+				(ManualLogSource)Loggers.FirstOrNull(t => t.SourceName == MetadataHelper.GetMetadata(Instance).Name); }
 
-		public static ProloInfo<T> PInfo { get=> (ProloInfo<T>)PInfoBase; protected set=>PInfoBase=value; }
 
 	}
 

@@ -15,13 +15,16 @@ namespace ProloAPI
 	using Extentions;
 	namespace Utilities
 	{
-		public class Util_General
+		using static Util_General;
 
+		public class Util_General
 		{
-			//internal static ManualLogSource Logger { get; private set; } = null;
-			//internal static BaseUnityPlugin Instance { get; private set; } = null;
-			//internal static IConfiguration cfg { get; private set; } = null;
 			private static BaseSaveLoadManager _saveLoad = null;
+
+			internal static ProloBaseUnityPlugin Instance = null;
+			internal static IConfiguration cfg = null;
+			internal static ManualLogSource Logger = null;
+
 			public static SaveLoadManager<Tctrl, Tdata> GetSaveLoadManager<Tctrl, Tdata>() where Tdata : class
 			{
 				if(_saveLoad == null || !(_saveLoad is SaveLoadManager<Tctrl, Tdata>))
@@ -31,10 +34,19 @@ namespace ProloAPI
 			}
 
 			public static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPlugin
-			 => ProloBaseUnityPlugin.PInfoBase.instance as Tinst;
-			public static IConfiguration cfg = ProloBaseUnityPlugin.PInfoBase.cfg;
+			 => ProloBaseUnityPlugin.Instances as Tinst;
 
-			static Texture2D _greyTex = null;
+			public static Tcfg GetConfig<Tinst, Tcfg>() where Tinst : ProloBaseUnityPlugin where Tcfg : IConfiguration => (Tcfg)GetInstance<Tinst>().cfg;
+
+			public static void SetApiInst<T1, T2>(ProloUnityPlugin<T1, T2> inst) where T1 : ProloBaseUnityPlugin where T2 : IConfiguration
+			{
+				Instance = inst;
+				Logger = inst.Logger;
+				cfg = inst.cfg;
+			}
+
+
+			private static Texture2D _greyTex = null;
 			public static Texture2D greyTex
 			{
 				get
@@ -144,7 +156,7 @@ namespace ProloAPI
 					}
 					catch(Exception e)
 					{
-						ProloBaseUnityPlugin.PInfoBase.Logger.LogError(e);
+						Logger.LogError(e);
 					}
 
 					if(vertical)
@@ -248,7 +260,7 @@ namespace ProloAPI
 					}
 					catch(Exception e)
 					{
-						ProloBaseUnityPlugin.PInfoBase.Logger.LogError(e);
+						Logger.LogError(e);
 					}
 
 					EndDirection();
