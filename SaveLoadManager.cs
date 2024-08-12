@@ -8,16 +8,18 @@ using MessagePack.Resolvers;
 
 using MessagePack.Unity;
 
+using UnityEngine;
+
 namespace ProloAPI
 {
 	/// <summary>
 	/// saves controls from current data. 
 	/// Note: make a new one if variables change
 	/// </summary>  
-	public class BaseSaveLoadManager
+	public abstract class BaseSaveLoadManager
 	{
-		public virtual int Version { get => -1; }
-		public virtual string[] DataKeys { get => new string[] { }; }
+		public int Version { get => -1; }
+		public string[] DataKeys { get => new string[] { }; }
 		public enum LoadDataType : int { }
 
 		public BaseSaveLoadManager()
@@ -29,7 +31,16 @@ namespace ProloAPI
 				//default resolver
 				ContractlessStandardResolver.Instance
 				);
+
+			Managers.Add(this);
 		}
+
+		~BaseSaveLoadManager()
+		{
+			Managers.Remove(this);
+		}
+
+		public static List<BaseSaveLoadManager> Managers { get; } = new List<BaseSaveLoadManager>();
 
 		// Convert an object to a byte array
 		public static byte[] ObjectToByteArray(object obj)
@@ -60,7 +71,7 @@ namespace ProloAPI
 		protected virtual object UpdateVersionFromPrev(object ctrler, object data) => throw new NotImplementedException();
 	}
 
-	public class SaveLoadManager<TCtrler, TData> : BaseSaveLoadManager where TData : class
+	public abstract class SaveLoadManager<TCtrler, TData> : BaseSaveLoadManager where TData : class
 	{
 		public new int Version => base.Version;
 		public new string[] DataKeys => base.DataKeys;
@@ -68,9 +79,30 @@ namespace ProloAPI
 
 		protected virtual TData UpdateVersionFromPrev(TCtrler ctrler, TData data) => (TData)base.UpdateVersionFromPrev(ctrler, data);
 
+
+		/// <summary>
+		/// DO NOT OVERRIDE THIS FUNCTION. USE <see cref="Load(TCtrler, TData)"/> 
+		/// </summary> 
+		/// <param name="ctrler"></param>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public override object Load(object ctrler, object data = null) => Load((TCtrler)ctrler,(TData)data);
+		
+		/// <summary>
+		/// DO NOT OVERRIDE THIS FUNCTION. USE <see cref="Save(TCtrler, TData)"/> 
+		/// </summary> 
+		/// <param name="ctrler"></param>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public override object Save(object ctrler, object data = null) => Save((TCtrler)ctrler, (TData)data);
+
+
 		public virtual TData Load(TCtrler ctrler, TData data = null) => (TData)base.Load(ctrler, data);
 
 		public virtual TData Save(TCtrler ctrler, TData data = null) => (TData)base.Save(ctrler, data);
 
 	}
+
+
+	public partial class CurrentSaveLoadManager { }
 }

@@ -12,6 +12,8 @@ using BepInEx.Configuration;
 
 namespace ProloAPI
 {
+	using Character_Morpher;
+
 	using Extentions;
 	namespace Utilities
 	{
@@ -21,29 +23,30 @@ namespace ProloAPI
 		{
 			private static BaseSaveLoadManager _saveLoad = null;
 
-			internal static ProloBaseUnityPlugin Instance = null;
-			internal static IConfiguration cfg = null;
-			internal static ManualLogSource Logger = null;
+			//	internal static ProloBaseUnityPlugin Instance = null;
+			//	internal static IConfiguration cfg = null;
+			internal static ManualLogSource Logger { get => ProloBaseUnityPlugin.Instances.FirstOrNull()?.Logger; }
 
-			public static SaveLoadManager<Tctrl, Tdata> GetSaveLoadManager<Tctrl, Tdata>() where Tdata : class
+
+			public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
 			{
-				if(_saveLoad == null || !(_saveLoad is SaveLoadManager<Tctrl, Tdata>))
-					_saveLoad = new SaveLoadManager<Tctrl, Tdata>();
+				if(_saveLoad == null || !(_saveLoad is Tmng))
+					_saveLoad = (Tmng)Activator.CreateInstance(typeof(Tmng));
 
-				return (SaveLoadManager<Tctrl, Tdata>)_saveLoad;
+				return (Tmng)_saveLoad;
 			}
 
-			public static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPlugin
-			 => ProloBaseUnityPlugin.Instances as Tinst;
+			internal static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPlugin
+			 => (Tinst)ProloBaseUnityPlugin.Instances.First((p) => p is Tinst);
 
-			public static Tcfg GetConfig<Tinst, Tcfg>() where Tinst : ProloBaseUnityPlugin where Tcfg : IConfiguration => (Tcfg)GetInstance<Tinst>().cfg;
+			//	public static Tcfg GetConfig<Tinst, Tcfg>() where Tinst : ProloBaseUnityPlugin where Tcfg : IConfiguration => (Tcfg)GetInstance<Tinst>().cfg;
 
-			public static void SetApiInst<T1, T2>(ProloUnityPlugin<T1, T2> inst) where T1 : ProloBaseUnityPlugin where T2 : IConfiguration
-			{
-				Instance = inst;
-				Logger = inst.Logger;
-				cfg = inst.cfg;
-			}
+			//public static void SetApiInst<T1, T2>(ProloUnityPlugin<T1, T2> inst) where T1 : ProloUnityPlugin<T1, T2> where T2 : IConfiguration
+			//{
+			//	Instance = inst;
+			//	Logger = ((ProloBaseUnityPlugin)inst)?.Logger;
+			//	//cfg = ((ProloBaseUnityPlugin)inst)?.cfg;
+			//}
 
 
 			private static Texture2D _greyTex = null;

@@ -394,9 +394,9 @@ namespace ProloAPI
 			/// <typeparam name="T"></typeparam>
 			/// <param name="v1"></param>
 			/// <param name="v2"></param>
-			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, T v2)
+			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, bool resetOnLaunch, T v2)
 			{
-				if(v1 == null || !(cfg?.resetOnLaunch?.Value??false)) return v1;
+				if(v1 == null || !(resetOnLaunch)) return v1;
 
 				v1.Value = v2;
 				v1.SettingChanged += (m, n) => { if(v2 != null) v2 = v1.Value; };
@@ -409,7 +409,7 @@ namespace ProloAPI
 			/// <typeparam name="T"></typeparam>
 			/// <param name="v1"></param>
 			/// <param name="v2"></param>
-			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1) => v1?.ConfigDefaulter((T)v1.DefaultValue);
+			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, bool resetOnLaunch) => v1?.ConfigDefaulter(resetOnLaunch, (T)v1.DefaultValue) ?? v1;
 
 			/// <summary>
 			/// Crates Image Texture based on path
@@ -587,19 +587,21 @@ namespace ProloAPI
 
 		public static class Ext_Game
 		{
-			public static PluginData SaveExtData<Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) => ctrl.SaveExtData<Tctrl, PluginData>(data, pre, post);
-			public static Tdata SaveExtData<Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tdata : class
+			public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+			public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
 			{
 				pre();
-				var tmp = GetSaveLoadManager<Tctrl, Tdata>().Save(ctrl, data);
+				//Logger.LogInfo($"Name of save: {typeof(Tmng).Name}");
+				var tmp = (Tdata)GetSaveLoadManager<Tmng>().Save(ctrl, data);
 				post();
 				return tmp;
 			}
-			public static PluginData LoadExtData<Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) => ctrl.LoadExtData<Tctrl, PluginData>(data, pre, post);
-			public static Tdata LoadExtData<Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tdata : class
+			public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+			public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
 			{
 				pre();
-				var tmp = GetSaveLoadManager<Tctrl, Tdata>().Load(ctrl, data);
+				//Logger.LogInfo($"Name of load: {typeof(Tmng).Name}");
+				var tmp = (Tdata)GetSaveLoadManager<Tmng>().Load(ctrl, data);
 				post();
 				return tmp;
 			}
@@ -619,7 +621,7 @@ namespace ProloAPI
 		{
 
 
-			public static T AddToCustomGUILayout<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true) where T : BaseGuiEntry
+			public static T AddToCustomGUILayout<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
 			{
 #if true //TODO: fix new UI loading in KK
 				gui?.OnGUIExists(g =>
@@ -634,9 +636,9 @@ namespace ProloAPI
 				return gui;
 			}
 
-			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true, GameObject ctrlObj = null) where T : BaseGuiEntry
+			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true, GameObject ctrlObj = null, bool debug = false) where T : BaseGuiEntry
 			{
-				if(cfg.debug.Value) Logger.LogDebug("moving object");
+				if(debug) Logger.LogDebug("moving object");
 
 				ctrlObj = ctrlObj ?? gui.ControlObject;
 
@@ -680,12 +682,12 @@ namespace ProloAPI
 				var par = scrollRect.transform;
 
 
-				if(cfg.debug.Value)  Logger.LogDebug("Parent: " + par);
+				if(debug) Logger.LogDebug("Parent: " + par);
 
 				int countcheck = 0;
 
 				//setup VerticalLayoutGroup
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				var vlg = scrollRect.gameObject.GetOrAddComponent<VerticalLayoutGroup>();
 
 #if HONEY_API
@@ -702,7 +704,7 @@ namespace ProloAPI
 
 				//This fixes the KOI_API rendering issue & enables scrolling over viewport (not elements tho)
 				//Also a sizing issue in Honey_API
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 #if KOI_API
 				scrollRect.GetComponent<Image>().sprite = scrollRect.content.GetComponent<Image>()?.sprite;
 				scrollRect.GetComponent<Image>().color = (Color)scrollRect.content.GetComponent<Image>()?.color;
@@ -720,7 +722,7 @@ namespace ProloAPI
 #endif
 
 				//Setup LayoutElements 
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				scrollRect.verticalScrollbar.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 				scrollRect.content.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 
@@ -738,7 +740,7 @@ namespace ProloAPI
 				//if(horizontal)
 
 				//Create Layout Element GameObject
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 
 				GameObject CreateGameObject(string name, Transform parent = null)
 				{
@@ -765,7 +767,7 @@ namespace ProloAPI
 
 
 				//calculate base GameObject sizing
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				var ele = par.GetOrAddComponent<LayoutElement>();
 				ele.minWidth = -1;
 				ele.minHeight = -1;
@@ -784,7 +786,7 @@ namespace ProloAPI
 
 
 				//Create and Set Horizontal Layout Settings
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				act2();
 				void act2()
 				{
@@ -811,7 +813,7 @@ namespace ProloAPI
 
 
 				//Add layout elements to control object children
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				for(int a = 0; a < ctrlObj.transform.childCount; ++a)
 				{
 					ele = ctrlObj.transform.GetChild(a).GetOrAddComponent<LayoutElement>();
@@ -819,7 +821,7 @@ namespace ProloAPI
 				}
 
 				//remove extra LayoutElements
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				var rList = ctrlObj.GetComponents<LayoutElement>();
 				for(int a = 1; a < rList.Length; ++a)
 					GameObject.DestroyImmediate(rList[a]);
@@ -827,14 +829,14 @@ namespace ProloAPI
 
 
 				//change child layout elements
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<LayoutElement>(0))
 					if(val.gameObject != ctrlObj)
 						val.flexibleWidth = val.minWidth = val.preferredWidth = -1;
 
 
 				//edit layout groups
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<HorizontalLayoutGroup>(0))
 				//	if(val.gameObject != ctrlObj)
 				{
@@ -844,8 +846,8 @@ namespace ProloAPI
 				}
 
 				//Set this object's Layout settings
-				if(cfg.debug.Value) Logger.LogDebug("Check: " + ++countcheck);
-				if(cfg.debug.Value)	Logger.LogDebug("setting as first/last");
+				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) Logger.LogDebug("setting as first/last");
 				ctrlObj.transform.SetParent(par, false);
 				ctrlObj.GetComponent<RectTransform>().pivot = new Vector2(0, 1);
 				var apos = ctrlObj.GetComponent<RectTransform>().anchoredPosition; apos.x = 0;
@@ -955,11 +957,17 @@ namespace ProloAPI
 			}
 
 			static Coroutine resizeco;
-			public static void ResizeCustomUIViewport<T>(this T template, float viewPercent = -1) where T : BaseGuiEntry
+			public static void ResizeCustomUIViewport<T>(this T template, float UISpace, float viewPercent = -1) where T : BaseGuiEntry
 			{
-				if(viewPercent >= 0 && cfg.makerViewportUISpace.Value != viewPercent)
-					cfg.makerViewportUISpace.Value = viewPercent;
-				viewPercent = cfg.makerViewportUISpace.Value;
+				//if(makerViewportUISpace == null)
+				//{
+				//	Logger?.LogWarning("Config not fully enabled. makerViewportUISpace does not exist.");
+				//
+				//	return;
+				//}
+				if(viewPercent >= 0 && UISpace != viewPercent)
+					UISpace = viewPercent;
+				viewPercent = UISpace;
 
 				if(template != null)
 					template.OnGUIExists((gui) =>
