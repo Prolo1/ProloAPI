@@ -16,6 +16,14 @@ namespace ProloAPI
 {
 	public abstract class ProloBaseUnityPlugin : BaseUnityPlugin
 	{
+		public struct ProloInfo
+		{
+			public string ModName;
+			public string GUID;//never change this
+			public string Version;
+
+			public override string ToString() => $"{ModName} : {GUID} : {Version}";
+		}
 
 		protected ProloBaseUnityPlugin()
 		{
@@ -27,20 +35,9 @@ namespace ProloAPI
 
 		~ProloBaseUnityPlugin() => Instances.Remove(Instance);
 
-		public struct ProloInfo
-		{
-			public string ModName;
-			public string GUID;//never change this
-			public string Version;
-
-			public override string ToString() => $"{ModName} : {GUID} : {Version}";
-		}
-
 		public ProloInfo ProInfo { get; }
 		public ProloBaseUnityPlugin Instance { get; }
 		public new ManualLogSource Logger { get => base.Logger; }
-		//private IConfiguration _cfg = null;
-		//public IConfiguration cfg { get => _cfg; set => _cfg = value; }
 
 		public static ICollection<ProloBaseUnityPlugin> Instances { get; } = new List<ProloBaseUnityPlugin>();
 
@@ -50,30 +47,13 @@ namespace ProloAPI
 	{
 		protected ProloUnityPlugin()
 		{
-			//	Debug.Log("Logging does work so that is good");
 			ForeGrounder.SetCurrentForground();
 			Instance = Instance ?? (T1)base.Instance ?? (T1)this;
 			Logger = base.Logger;
-
-			//instUpdate.RemoveAllListeners();
-			//instUpdate.AddListener(() => Utilities.Util_General.SetApiInst(this));
-			//instUpdate.Invoke();
 		}
 
-		//private UnityEvent instUpdate = new UnityEvent();
 		public static new T1 Instance { get; private set; }
 		public static new ManualLogSource Logger { get; private set; }
-		//public new T2 cfg
-		//{
-		//	get => (T2)base.cfg;
-		//	set
-		//	{
-		//		base.cfg = value;
-		//		Instance.instUpdate.Invoke();
-		//	}
-		//}
-
-
 
 	}
 

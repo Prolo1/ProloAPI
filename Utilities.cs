@@ -12,7 +12,6 @@ using BepInEx.Configuration;
 
 namespace ProloAPI
 {
-	using Character_Morpher;
 
 	using Extentions;
 	namespace Utilities
@@ -21,11 +20,10 @@ namespace ProloAPI
 
 		public class Util_General
 		{
+
 			private static BaseSaveLoadManager _saveLoad = null;
 
-			//	internal static ProloBaseUnityPlugin Instance = null;
-			//	internal static IConfiguration cfg = null;
-			internal static ManualLogSource Logger { get => ProloBaseUnityPlugin.Instances.FirstOrNull()?.Logger; }
+			internal static readonly ManualLogSource ProloLogger = BepInEx.Logging.Logger.CreateLogSource("Prolo Logger");
 
 
 			public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
@@ -36,17 +34,13 @@ namespace ProloAPI
 				return (Tmng)_saveLoad;
 			}
 
+			/// <summary>
+			/// Gets the first instance of specified plugin.
+			/// </summary>
+			/// <typeparam name="Tinst"></typeparam>
+			/// <returns></returns>
 			internal static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPlugin
 			 => (Tinst)ProloBaseUnityPlugin.Instances.First((p) => p is Tinst);
-
-			//	public static Tcfg GetConfig<Tinst, Tcfg>() where Tinst : ProloBaseUnityPlugin where Tcfg : IConfiguration => (Tcfg)GetInstance<Tinst>().cfg;
-
-			//public static void SetApiInst<T1, T2>(ProloUnityPlugin<T1, T2> inst) where T1 : ProloUnityPlugin<T1, T2> where T2 : IConfiguration
-			//{
-			//	Instance = inst;
-			//	Logger = ((ProloBaseUnityPlugin)inst)?.Logger;
-			//	//cfg = ((ProloBaseUnityPlugin)inst)?.cfg;
-			//}
 
 
 			private static Texture2D _greyTex = null;
@@ -159,7 +153,7 @@ namespace ProloAPI
 					}
 					catch(Exception e)
 					{
-						Logger.LogError(e);
+						ProloLogger.LogError(e);
 					}
 
 					if(vertical)
@@ -263,7 +257,7 @@ namespace ProloAPI
 					}
 					catch(Exception e)
 					{
-						Logger.LogError(e);
+						ProloLogger.LogError(e);
 					}
 
 					EndDirection();

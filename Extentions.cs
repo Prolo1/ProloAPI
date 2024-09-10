@@ -299,37 +299,94 @@ namespace ProloAPI
 				list.Add(val);
 				return list.Last();
 			}
+#if AI
+			/// <summary>
+			/// Determines weather two sequences are equal by using the default equality comparer of its type
+			/// </summary>
+			/// <typeparam name="T"></typeparam>
+			/// <typeparam name="TComp"></typeparam>
+			/// <param name="first"></param>
+			/// <param name="second"></param>
+			/// <param name="compKeySelect"></param>
+			/// <returns></returns>
+			public static bool SequenceEqual<T, TComp>(this IEnumerable<T> first, IEnumerable<T> second, Func<T, TComp> compKeySelect)
+				 => first.Select(compKeySelect).SequenceEqual(second.Select(compKeySelect));
+#endif
+
+			/// <summary>
+			/// Gets the first instance in a collection.
+			/// Returns <see langword="null"/> otherwise (works exactly like <see cref="Enumerable.FirstOrDefault"/>)
+			/// </summary>
+			/// <typeparam name="T">Any <see langword="class"/> type</typeparam>
+			/// <param name="enu">IEnumerable list to search </param>
+			/// <returns> <typeparamref name="T"/> or <see langword="null"/> </returns>
 			public static T FirstOrNull<T>(this IEnumerable<T> enu) where T : class
 			{
-				//I love loopholes 🤣
-				try
-				{ return enu.First(); }
-				catch { return null; }
+				return enu?.FirstOrDefault() ?? null;
 			}
+
+			/// <summary>
+			/// Gets the first instance in a collection that meets predicate condition. 
+			/// Returns <see langword="null"/> otherwise (works exactly like <see cref="Enumerable.FirstOrDefault"/>)
+			/// </summary>
+			/// <typeparam name="T">Any <see langword="class"/> type</typeparam>
+			/// <param name="enu">IEnumerable list to search </param>
+			/// <returns><typeparamref name="T"/> or <see langword="null"/> </returns>
 			public static T FirstOrNull<T>(this IEnumerable<T> enu, Func<T, bool> predicate) where T : class
 			{
-				//I love loopholes 🤣
-				try
-				{ return enu.First(predicate); }
-				catch { return null; }
+				return enu?.FirstOrDefault(predicate) ?? null;
 			}
+
+			/// <summary>
+			/// Gets the last instance in a collection. 
+			/// Returns <see langword="null"/> otherwise (works exactly like <see cref="Enumerable.FirstOrDefault"/>)
+			/// </summary>
+			/// <typeparam name="T">Any <see langword="class"/> type</typeparam>
+			/// <param name="enu">IEnumerable to search </param>
+			/// <returns> <typeparamref name="T"/> or <see langword="null"/> </returns>
 			public static T LastOrNull<T>(this IEnumerable<T> enu) where T : class
 			{
-				try
-				{ return enu.Last(); }
-				catch { return null; }
-			}     //I love loopholes 🤣
+				return enu?.LastOrDefault() ?? null;
+			}
+
+			/// <summary>
+			/// Gets the last instance in a collection that meets predicate condition. 
+			/// Returns <see langword="null"/> otherwise (works exactly like <see cref="Enumerable.FirstOrDefault"/>)
+			/// </summary>
+			/// <typeparam name="T">Any <see langword="class"/> type</typeparam>
+			/// <param name="enu">IEnumerable to search </param>
+			/// <returns> <typeparamref name="T"/> or <see langword="null"/> </returns>
 			public static T LastOrNull<T>(this IEnumerable<T> enu, Func<T, bool> predicate) where T : class
 			{
-				try
-				{ return enu.Last(predicate); }
-				catch { return null; }
-			}   //I love loopholes 🤣
+				return enu?.Last(predicate) ?? null;
+			}
 
+			/// <summary>
+			/// Checks if <paramref name="index"/> is in range of <see cref="IEnumerable"/> 
+			/// </summary>
+			/// <typeparam name="T">IEnumerable type</typeparam>
+			/// <param name="list"> IEnumerable being checked</param>
+			/// <param name="index"> Index to check</param>
+			/// <returns> <see langword="true"/> if index is in range. <see langword="false"/> otherwise </returns>
 			public static bool InRange<T>(this IEnumerable<T> list, int index) => index >= 0 && index < list.Count();
-			public static bool InRange<T>(this T src, T min, T max) where T : IComparable
-				=> src.CompareTo(max) <= 0 && src.CompareTo(min) >= 0;
 
+			/// <summary>
+			/// Checks if <typeparamref name="T"/> <paramref name="src"/> is within range of <paramref name="min"/> and <paramref name="max"/> (inclusive)
+			/// </summary>
+			/// <typeparam name="T">IComparable type</typeparam>
+			/// <param name="src"> IComparable being checked</param>
+			/// <param name="min"> Minimum range</param>
+			/// <param name="max"> Maximum range</param>
+			/// <returns> <see langword="true"/> if <typeparamref name="T"/> is in range. <see langword="false"/> otherwise </returns>
+			public static bool InRange<T>(this T src, T min, T max) where T : IComparable
+			   => src.CompareTo(max) <= 0 && src.CompareTo(min) >= 0;
+
+			/// <summary>
+			/// Get a list of config data from config file on disk that were not initialized
+			/// </summary>
+			/// <param name="file">config file to search</param>
+			/// <param name="sec">section to search (optional)</param>
+			/// <returns>  <see cref="List{KeyValuePair{ConfigDefinition, string}}"/> list of all orphaned entries </returns>
 			public static List<KeyValuePair<ConfigDefinition, string>> GetUnorderedOrphanedEntries(this ConfigFile file, string sec = "")
 			{
 				Dictionary<ConfigDefinition, string> OrphanedEntries = new Dictionary<ConfigDefinition, string>();
@@ -370,12 +427,12 @@ namespace ProloAPI
 			}
 
 			/// <summary>
-			/// makes sure a path fallows the format "this/is/a/path" and not "this//is\\a/path" or similar
+			/// Makes sure a path fallows the format "this/is/a/path" and not "this//is\\a/path" or similar
 			/// </summary>
 			/// <param name="dir"></param>
 			/// <param name="oldslash"></param>
 			/// <param name="newslash"></param>
-			/// <returns></returns>
+			/// <returns> <see langword="string"/> of new path</returns>
 			public static string MakeDirPath(this string dir, string oldslash = "\\", string newslash = "/")
 			{
 
@@ -424,11 +481,11 @@ namespace ProloAPI
 				Texture2D.blackTexture.ToTexture2D();
 
 			/// <summary>
-			/// 
+			/// Makes sure GUI is initialized before code execution
 			/// </summary>
 			/// <param name="gui"></param>
 			/// <param name="act"></param>
-			/// <returns></returns>
+			/// <returns>Reference to original <typeparamref name="T"/></returns>
 			public static T OnGUIExists<T>(this T gui, UnityAction<T> act) where T : BaseGuiEntry
 			{
 				if(gui == null) return null;
@@ -464,12 +521,22 @@ namespace ProloAPI
 				return gui;
 			}
 
-
+			/// <summary>
+			/// Gets the <see cref="TMP_Text"/> or <see cref="Text"/> component attached to this object or it's children
+			/// </summary>
+			/// <param name="obj"><see cref="GameObject"/> to check</param>
+			/// <returns><see cref="TMP_Text"/> or <see cref="Text"/> component. <see langword="null"/> otherwise</returns>
 			public static Graphic GetTextComponentInChildren(this GameObject obj)
 			{
 				return (Graphic)obj?.GetComponentInChildren<TMP_Text>() ??
 				 obj?.GetComponentInChildren<Text>();
 			}
+
+			/// <summary>
+			/// Gets the <see cref="TMP_Text"/> or <see cref="Text"/> component attached to this object or it's children
+			/// </summary>
+			/// <param name="obj"><see cref="UIBehaviour"/> to check</param>
+			/// <returns><see cref="TMP_Text"/> or <see cref="Text"/> component. <see langword="null"/> otherwise</returns>
 			public static Graphic GetTextComponentInChildren(this UIBehaviour obj)
 			{
 				return obj.gameObject.GetTextComponentInChildren();
@@ -621,13 +688,13 @@ namespace ProloAPI
 		{
 
 
-			public static T AddToCustomGUILayout<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
+			public static T AddToCustomGUILayout<T>(this T gui, float viewpercent, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
 			{
 #if true //TODO: fix new UI loading in KK
 				gui?.OnGUIExists(g =>
 				{
 
-					GetInstance<ProloBaseUnityPlugin>().StartCoroutine(g.AddToCustomGUILayoutCO(topUI, pWidth, viewpercent, newVertLine));
+					GetInstance<ProloBaseUnityPlugin>().StartCoroutine(g.AddToCustomGUILayoutCO(viewpercent, topUI, pWidth, newVertLine));
 
 
 					//await g.AddToCustomGUILayoutCO(topUI, pWidth, viewpercent, newVertLine);
@@ -636,9 +703,9 @@ namespace ProloAPI
 				return gui;
 			}
 
-			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, bool topUI = false, float pWidth = -1, float viewpercent = -1, bool newVertLine = true, GameObject ctrlObj = null, bool debug = false) where T : BaseGuiEntry
+			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, float viewpercent, bool topUI = false, float pWidth = -1, bool newVertLine = true, GameObject ctrlObj = null, bool debug = false) where T : BaseGuiEntry
 			{
-				if(debug) Logger.LogDebug("moving object");
+				if(debug) ProloLogger.LogDebug("moving object");
 
 				ctrlObj = ctrlObj ?? gui.ControlObject;
 
@@ -656,7 +723,7 @@ namespace ProloAPI
 				//	Logger.LogInfo("scrollrect found!!!");
 				//}
 
-				if(!ctrlObj)
+				if(ctrlObj)
 					yield return new WaitWhile(() => ctrlObj.GetComponentInParent<ScrollRect>() == null);
 
 #if KK
@@ -682,12 +749,12 @@ namespace ProloAPI
 				var par = scrollRect.transform;
 
 
-				if(debug) Logger.LogDebug("Parent: " + par);
+				if(debug) ProloLogger.LogDebug("Parent: " + par);
 
 				int countcheck = 0;
 
 				//setup VerticalLayoutGroup
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var vlg = scrollRect.gameObject.GetOrAddComponent<VerticalLayoutGroup>();
 
 #if HONEY_API
@@ -704,7 +771,7 @@ namespace ProloAPI
 
 				//This fixes the KOI_API rendering issue & enables scrolling over viewport (not elements tho)
 				//Also a sizing issue in Honey_API
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 #if KOI_API
 				scrollRect.GetComponent<Image>().sprite = scrollRect.content.GetComponent<Image>()?.sprite;
 				scrollRect.GetComponent<Image>().color = (Color)scrollRect.content.GetComponent<Image>()?.color;
@@ -722,7 +789,7 @@ namespace ProloAPI
 #endif
 
 				//Setup LayoutElements 
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				scrollRect.verticalScrollbar.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 				scrollRect.content.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 
@@ -740,7 +807,7 @@ namespace ProloAPI
 				//if(horizontal)
 
 				//Create Layout Element GameObject
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 
 				GameObject CreateGameObject(string name, Transform parent = null)
 				{
@@ -767,7 +834,7 @@ namespace ProloAPI
 
 
 				//calculate base GameObject sizing
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var ele = par.GetOrAddComponent<LayoutElement>();
 				ele.minWidth = -1;
 				ele.minHeight = -1;
@@ -786,7 +853,7 @@ namespace ProloAPI
 
 
 				//Create and Set Horizontal Layout Settings
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				act2();
 				void act2()
 				{
@@ -813,7 +880,7 @@ namespace ProloAPI
 
 
 				//Add layout elements to control object children
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				for(int a = 0; a < ctrlObj.transform.childCount; ++a)
 				{
 					ele = ctrlObj.transform.GetChild(a).GetOrAddComponent<LayoutElement>();
@@ -821,7 +888,7 @@ namespace ProloAPI
 				}
 
 				//remove extra LayoutElements
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var rList = ctrlObj.GetComponents<LayoutElement>();
 				for(int a = 1; a < rList.Length; ++a)
 					GameObject.DestroyImmediate(rList[a]);
@@ -829,14 +896,14 @@ namespace ProloAPI
 
 
 				//change child layout elements
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<LayoutElement>(0))
 					if(val.gameObject != ctrlObj)
 						val.flexibleWidth = val.minWidth = val.preferredWidth = -1;
 
 
 				//edit layout groups
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<HorizontalLayoutGroup>(0))
 				//	if(val.gameObject != ctrlObj)
 				{
@@ -846,8 +913,8 @@ namespace ProloAPI
 				}
 
 				//Set this object's Layout settings
-				if(debug) Logger.LogDebug("Check: " + ++countcheck);
-				if(debug) Logger.LogDebug("setting as first/last");
+				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(debug) ProloLogger.LogDebug("setting as first/last");
 				ctrlObj.transform.SetParent(par, false);
 				ctrlObj.GetComponent<RectTransform>().pivot = new Vector2(0, 1);
 				var apos = ctrlObj.GetComponent<RectTransform>().anchoredPosition; apos.x = 0;
@@ -972,8 +1039,6 @@ namespace ProloAPI
 				if(template != null)
 					template.OnGUIExists((gui) =>
 					{
-
-
 						IEnumerator func()
 						{
 

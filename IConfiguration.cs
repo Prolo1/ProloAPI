@@ -14,6 +14,6 @@ namespace ProloAPI
 		//Advanced
 		ConfigEntry<bool> resetOnLaunch { set; get; }
 		ConfigEntry<bool> debug { set; get; }
-		ConfigEntry<float> makerViewportUISpace { set; get; }
+		//ConfigEntry<float> makerViewportUISpace { set; get; }
 	}
 }

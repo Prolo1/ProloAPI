@@ -16,7 +16,7 @@ namespace ProloAPI
 	/// saves controls from current data. 
 	/// Note: make a new one if variables change
 	/// </summary>  
-	public abstract class BaseSaveLoadManager
+	public abstract class BaseSaveLoadManager : IDisposable
 	{
 		public int Version { get => -1; }
 		public string[] DataKeys { get => new string[] { }; }
@@ -37,7 +37,7 @@ namespace ProloAPI
 
 		~BaseSaveLoadManager()
 		{
-			Managers.Remove(this);
+			Dispose();
 		}
 
 		public static List<BaseSaveLoadManager> Managers { get; } = new List<BaseSaveLoadManager>();
@@ -69,6 +69,11 @@ namespace ProloAPI
 		public virtual object Save(object ctrler, object data = null) => throw new NotImplementedException();
 
 		protected virtual object UpdateVersionFromPrev(object ctrler, object data) => throw new NotImplementedException();
+
+		public void Dispose()
+		{
+			Managers.Remove(this);
+		}
 	}
 
 	public abstract class SaveLoadManager<TCtrler, TData> : BaseSaveLoadManager where TData : class
@@ -86,15 +91,15 @@ namespace ProloAPI
 		/// <param name="ctrler"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override object Load(object ctrler, object data = null) => Load((TCtrler)ctrler,(TData)data);
-		
+		public override object Load(object ctrler, object data = null) => this.Load((TCtrler)ctrler, (TData)data);
+
 		/// <summary>
 		/// DO NOT OVERRIDE THIS FUNCTION. USE <see cref="Save(TCtrler, TData)"/> 
 		/// </summary> 
 		/// <param name="ctrler"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override object Save(object ctrler, object data = null) => Save((TCtrler)ctrler, (TData)data);
+		public override object Save(object ctrler, object data = null) => this.Save((TCtrler)ctrler, (TData)data);
 
 
 		public virtual TData Load(TCtrler ctrler, TData data = null) => (TData)base.Load(ctrler, data);
@@ -103,6 +108,4 @@ namespace ProloAPI
 
 	}
 
-
-	public partial class CurrentSaveLoadManager { }
 }
