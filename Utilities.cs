@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,17 +12,20 @@ using KKAPI.Chara;
 using BepInEx.Configuration;
 
 
+
 namespace ProloAPI
 {
-
 	using Extentions;
+
 	namespace Utilities
 	{
+		using KKAPI.Utilities;
+
 		using static Util_General;
 
 		public class Util_General
 		{
-
+			public static bool Debug { get; set; } = false;
 			private static BaseSaveLoadManager _saveLoad = null;
 
 			internal static readonly ManualLogSource ProloLogger = BepInEx.Logging.Logger.CreateLogSource("Prolo Logger");
@@ -63,20 +68,56 @@ namespace ProloAPI
 
 
 			/// <summary>
-			/// Returns a list of the registered handler specified. returns empty list otherwise 
+			/// Returns a list of the regestered handeler specified. returns empty list otherwise 
 			/// </summary>
 			/// <typeparam name="T"></typeparam>
 			/// <returns></returns>
-			public static IEnumerable<T> GetFuncCtrlOfType<T>()
+			public static IEnumerable<T> GetAllChaFuncCtrlOfType<T>() where T : CharaCustomFunctionController
 			{
-				foreach(var hnd in CharacterApi.RegisteredHandlers
-					.Where(reg => reg.ControllerType == typeof(T)))
-					return hnd.Instances.Cast<T>();
+				foreach(var hnd in CharacterApi.RegisteredHandlers)
+					if(hnd.ControllerType == typeof(T))
+						return hnd.Instances.Cast<T>();
 
 				return new T[] { };
 			}
 
+			public static MemoryStream ResourceGrabber(string name, Assembly ass = null, string[] res = null, MemoryStream mem = null)
+			{
+				/**This stuff will be used later*/
+				//Logger.LogDebug($"\nResources:\n[{string.Join(", ", resources)}]");
+				ass = ass ?? Assembly.GetExecutingAssembly();
+				res = res ?? ass.GetManifestResourceNames();
+				var data = ass.GetManifestResourceStream(res.FirstOrDefault((txt) => (txt.ToLower()).Contains(name)) ?? " ");
+				mem = mem ?? new MemoryStream();
+#if KK
+				mem.SetLength(0);//Clear Buffer 
+				mem.Write(data.ReadAllBytes(), 0, (int)data.Length);//write Buffer
+#else
+				mem.SetLength(0);//Clear Buffer 
+				data?.CopyTo(mem);
+#endif
+				return mem;
+			}
 
+			public static GameObject CreateGameObject(string name, Transform parent = null)
+			{
+				var tmp = new GameObject(name);
+				tmp.transform.parent = parent;
+				return tmp;
+			}
+
+			public static GameObject CreateGameObject(string name, params Type[] components)
+			{
+				var tmp = new GameObject(name, components);
+				return tmp;
+			}
+
+			public static GameObject CreateGameObject(string name, Transform parent, params Type[] components)
+			{
+				var tmp = new GameObject(name, components);
+				tmp.transform.parent = parent;
+				return tmp;
+			}
 		}
 
 		public class Util_GUI
@@ -267,5 +308,6 @@ namespace ProloAPI
 			}
 		}
 	}
+
 
 }

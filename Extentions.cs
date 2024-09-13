@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Xml;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,7 +18,6 @@ using KKAPI.Maker;
 using KKAPI.Studio;
 using KKAPI.Utilities;
 using KKAPI.Maker.UI;
-using KKABMX.Core;
 using ExtensibleSaveFormat;
 using MessagePack.Resolvers;
 using MessagePack.Unity;
@@ -33,7 +31,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using UniRx;
-using Character_Morpher;
 using UGUI_AssistLibrary;
 
 
@@ -247,14 +244,14 @@ namespace ProloAPI
 	/// </summary>
 	public class ForeGrounder
 	{
-		static IntPtr ptr = IntPtr.Zero;
+		public static IntPtr Handle { get; private set; } = IntPtr.Zero;
 
 		/// <summary>
 		/// set window to go back to
 		/// </summary>
 		public static void SetCurrentForground()
 		{
-			ptr = GetActiveWindow();
+			Handle = GetActiveWindow();
 
 			//	Morph_Util.Logger.LogDebug($"Process ptr 1 set to: {ptr}");
 		}
@@ -266,8 +263,8 @@ namespace ProloAPI
 		{
 			//	Morph_Util.Logger.LogDebug($"process ptr: {ptr}");
 
-			if(ptr != IntPtr.Zero)
-				SwitchToThisWindow(ptr, true);
+			if(Handle != IntPtr.Zero)
+				SwitchToThisWindow(Handle, true);
 		}
 
 
@@ -286,6 +283,25 @@ namespace ProloAPI
 		public static class Ext_General
 		{
 
+			/// <summary>
+			/// Checks if the contents of a string is a near match for a pattern.
+			/// 
+			/// </summary> 
+			/// <param name="str">string to be searched</param>
+			/// <param name="ptrn">pattern to be looked for</param>
+			/// <returns></returns>
+			public static bool Search(this string str, string ptrn, bool caseSensitive = false)
+			{
+				int i = -1;//check if each character is one after the other
+
+				if(!caseSensitive)
+				{
+					str = str.ToLower();
+					ptrn = ptrn.ToLower();
+				}
+
+				return ptrn.All(t => Tuple.Create(str = str.Substring(i = str.IndexOf(t) + 1), i > 0).Item2);
+			}
 
 			/// <summary>
 			/// Adds a value to the end of a list and returns it
@@ -467,6 +483,7 @@ namespace ProloAPI
 			/// <param name="v1"></param>
 			/// <param name="v2"></param>
 			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, bool resetOnLaunch) => v1?.ConfigDefaulter(resetOnLaunch, (T)v1.DefaultValue) ?? v1;
+			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, IConfiguration config) => v1?.ConfigDefaulter(config.resetOnLaunch.Value);
 
 			/// <summary>
 			/// Crates Image Texture based on path
@@ -522,6 +539,18 @@ namespace ProloAPI
 			}
 
 			/// <summary>
+			/// Gets the <see cref="TMP_InputField"/> or <see cref="InputField"/> component attached to this object or it's children
+			/// </summary>
+			/// <param name="obj"><see cref="GameObject"/> to check</param>
+			/// <returns><see cref="TMP_InputField"/> or <see cref="InputField"/> component. <see langword="null"/> otherwise</returns>
+			public static Selectable GetInputFieldComponentInChildren(this GameObject obj)
+			{
+				return (Selectable)obj?.GetComponentInChildren<TMP_InputField>() ??
+				 obj?.GetComponentInChildren<InputField>();
+			}
+
+
+			/// <summary>
 			/// Gets the <see cref="TMP_Text"/> or <see cref="Text"/> component attached to this object or it's children
 			/// </summary>
 			/// <param name="obj"><see cref="GameObject"/> to check</param>
@@ -541,6 +570,17 @@ namespace ProloAPI
 			{
 				return obj.gameObject.GetTextComponentInChildren();
 			}
+
+			/// <summary>
+			/// gets the text of the first <see cref="InputField"/>  or <see cref="TMP_InputField"/> component in a game object or it's children.
+			///  If no component return null. 
+			/// </summary>
+			/// <param name="obj"></param>
+			/// <returns></returns>
+			public static string GetTextFromInputFieldComponent(this GameObject obj)
+				=>
+				obj?.GetComponentInChildren<TMP_InputField>()?.text ??
+				obj?.GetComponentInChildren<InputField>()?.text ?? null;
 
 			/// <summary>
 			/// gets the text of the first Text or TMP_Text component in a game object or it's children.
@@ -563,15 +603,19 @@ namespace ProloAPI
 				=> obj.gameObject.GetTextFromTextComponent();
 
 			/// <summary>
-			/// sets the text of the first Text or TMP_Text component in a game object or it's children.
+			/// sets the text of the first <see cref="InputField"/> or <see cref="TMP_InputField"/>  component in a game object or it's children.
 			///  If no component does nothing. 
 			/// </summary>
 			/// <param name="obj"></param>
 			/// <returns></returns>
-			public static void SetTextFromTextComponent(this GameObject obj, string txt) =>
-			((Component)obj?.GetComponentInChildren<TMP_Text>() ??
-				obj?.GetComponentInChildren<Text>())?
-				.SetTextFromTextComponent(txt);
+			public static void SetTextFromInputFieldComponent(this GameObject obj, string txt)
+			{
+				Component comp;
+				if(comp = obj?.GetComponentInChildren<TMP_Text>())
+					((TMP_Text)comp).text = (txt);
+				else if(comp = obj?.GetComponentInChildren<Text>())
+					((Text)comp).text = (txt);
+			}
 
 			/// <summary>
 			/// sets the text of the first Text or TMP_Text component in a game object or it's children.
@@ -588,6 +632,16 @@ namespace ProloAPI
 					((Text)comp).text = (txt);
 			}
 
+			/// <summary>
+			/// sets the text of the first Text or TMP_Text component in a game object or it's children.
+			///  If no component does nothing. 
+			/// </summary>
+			/// <param name="obj"></param>
+			/// <returns></returns>
+			public static void SetTextFromTextComponent(this GameObject obj, string txt) =>
+			((Component)obj?.GetComponentInChildren<TMP_Text>() ??
+				obj?.GetComponentInChildren<Text>())?
+				.SetTextFromTextComponent(txt);
 
 			public static GameObject ScaleToParent2D(this GameObject obj, float pwidth = 1, float pheight = 1, bool changewidth = true, bool changeheight = true)
 			{
@@ -650,6 +704,7 @@ namespace ProloAPI
 			public static int HierarchyLevelIndex(this Transform obj) => obj.parent ? obj.parent.HierarchyLevelIndex() + 1 : 0;
 			public static int HierarchyLevelIndex(this GameObject obj) => obj.transform.HierarchyLevelIndex();
 
+			
 		}
 
 		public static class Ext_Game
@@ -657,19 +712,19 @@ namespace ProloAPI
 			public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
 			public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
 			{
-				pre();
-				//Logger.LogInfo($"Name of save: {typeof(Tmng).Name}");
+				if(Debug) ProloLogger.LogInfo($"Name of save: {typeof(Tmng).Name}");
+				pre?.Invoke();
 				var tmp = (Tdata)GetSaveLoadManager<Tmng>().Save(ctrl, data);
-				post();
+				post?.Invoke();
 				return tmp;
 			}
 			public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
 			public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
 			{
-				pre();
-				//Logger.LogInfo($"Name of load: {typeof(Tmng).Name}");
+				if(Debug) ProloLogger.LogInfo($"Name of load: {typeof(Tmng).Name}");
+				pre?.Invoke();
 				var tmp = (Tdata)GetSaveLoadManager<Tmng>().Load(ctrl, data);
-				post();
+				post?.Invoke();
 				return tmp;
 			}
 
@@ -686,9 +741,7 @@ namespace ProloAPI
 
 		public static class Ext_GUI
 		{
-
-
-			public static T AddToCustomGUILayout<T>(this T gui, float viewpercent, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
+			public static T AddToCustomGUILayout<T>(this T gui, float viewpercent = -1, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
 			{
 #if true //TODO: fix new UI loading in KK
 				gui?.OnGUIExists(g =>
@@ -703,9 +756,9 @@ namespace ProloAPI
 				return gui;
 			}
 
-			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, float viewpercent, bool topUI = false, float pWidth = -1, bool newVertLine = true, GameObject ctrlObj = null, bool debug = false) where T : BaseGuiEntry
+			static IEnumerator AddToCustomGUILayoutCO<T>(this T gui, float viewpercent = -1, bool topUI = false, float pWidth = -1, bool newVertLine = true, GameObject ctrlObj = null) where T : BaseGuiEntry
 			{
-				if(debug) ProloLogger.LogDebug("moving object");
+				if(Debug) ProloLogger.LogDebug("moving object");
 
 				ctrlObj = ctrlObj ?? gui.ControlObject;
 
@@ -749,12 +802,12 @@ namespace ProloAPI
 				var par = scrollRect.transform;
 
 
-				if(debug) ProloLogger.LogDebug("Parent: " + par);
+				if(Debug) ProloLogger.LogDebug("Parent: " + par);
 
 				int countcheck = 0;
 
 				//setup VerticalLayoutGroup
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var vlg = scrollRect.gameObject.GetOrAddComponent<VerticalLayoutGroup>();
 
 #if HONEY_API
@@ -771,7 +824,7 @@ namespace ProloAPI
 
 				//This fixes the KOI_API rendering issue & enables scrolling over viewport (not elements tho)
 				//Also a sizing issue in Honey_API
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 #if KOI_API
 				scrollRect.GetComponent<Image>().sprite = scrollRect.content.GetComponent<Image>()?.sprite;
 				scrollRect.GetComponent<Image>().color = (Color)scrollRect.content.GetComponent<Image>()?.color;
@@ -789,7 +842,7 @@ namespace ProloAPI
 #endif
 
 				//Setup LayoutElements 
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				scrollRect.verticalScrollbar.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 				scrollRect.content.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
 
@@ -807,14 +860,9 @@ namespace ProloAPI
 				//if(horizontal)
 
 				//Create Layout Element GameObject
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 
-				GameObject CreateGameObject(string name, Transform parent = null)
-				{
-					var tmp = new GameObject(name);
-					tmp.transform.parent = parent;
-					return tmp;
-				}
+				
 
 
 				act1();
@@ -834,7 +882,7 @@ namespace ProloAPI
 
 
 				//calculate base GameObject sizing
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var ele = par.GetOrAddComponent<LayoutElement>();
 				ele.minWidth = -1;
 				ele.minHeight = -1;
@@ -853,7 +901,7 @@ namespace ProloAPI
 
 
 				//Create and Set Horizontal Layout Settings
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				act2();
 				void act2()
 				{
@@ -880,7 +928,7 @@ namespace ProloAPI
 
 
 				//Add layout elements to control object children
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				for(int a = 0; a < ctrlObj.transform.childCount; ++a)
 				{
 					ele = ctrlObj.transform.GetChild(a).GetOrAddComponent<LayoutElement>();
@@ -888,7 +936,7 @@ namespace ProloAPI
 				}
 
 				//remove extra LayoutElements
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var rList = ctrlObj.GetComponents<LayoutElement>();
 				for(int a = 1; a < rList.Length; ++a)
 					GameObject.DestroyImmediate(rList[a]);
@@ -896,14 +944,14 @@ namespace ProloAPI
 
 
 				//change child layout elements
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<LayoutElement>(0))
 					if(val.gameObject != ctrlObj)
 						val.flexibleWidth = val.minWidth = val.preferredWidth = -1;
 
 
 				//edit layout groups
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				foreach(var val in ctrlObj.GetComponentsInChildren<HorizontalLayoutGroup>(0))
 				//	if(val.gameObject != ctrlObj)
 				{
@@ -913,8 +961,8 @@ namespace ProloAPI
 				}
 
 				//Set this object's Layout settings
-				if(debug) ProloLogger.LogDebug("Check: " + ++countcheck);
-				if(debug) ProloLogger.LogDebug("setting as first/last");
+				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
+				if(Debug) ProloLogger.LogDebug("setting as first/last");
 				ctrlObj.transform.SetParent(par, false);
 				ctrlObj.GetComponent<RectTransform>().pivot = new Vector2(0, 1);
 				var apos = ctrlObj.GetComponent<RectTransform>().anchoredPosition; apos.x = 0;
@@ -981,7 +1029,68 @@ namespace ProloAPI
 				LayoutRebuilder.MarkLayoutForRebuild(scrollRect.GetComponent<RectTransform>());
 				yield break;
 			}
+			static Rect getContainerRect(BaseGuiEntry gui)
+			{
+				Rect tmp = new Rect(gui.ControlObject.GetComponentInParent<ScrollRect>().rectTransform.rect);
+				tmp.position = gui.ControlObject.GetComponentInParent<ScrollRect>().rectTransform.position;
+				tmp.y = Screen.height - (tmp.yMax);
 
+				return tmp;
+			}
+			static GUIStyle tmpSty = null;
+			public static void tooltipMsg<T>(this BaseGuiEntry gui, string msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour
+			{
+				gui.OnGUIExists(_ =>
+				{
+					var trans = gui.ControlObject.transform;
+					var obj = trans.GetChild(trans.childCount - 1);
+					UnityAction act1 = null;
+					void act2(string tooltip, Rect winRec, bool enableTip)
+					{
+						if(MakerAPI.InsideAndLoaded && enableTip && !tooltip.IsNullOrEmpty())
+						{
+							if(tmpSty == null)
+							{
+								var tex = new Texture2D(1, 1);
+								tex.SetPixel(0, 0, new Color(0, 0, 0, .5f));
+								tex.Apply();
+								tmpSty = new GUIStyle(GUI.skin.label)
+								{
+									normal = new GUIStyleState
+									{
+										textColor = Color.cyan,
+										background = tex
+									},
+									wordWrap = true,
+									alignment = TextAnchor.MiddleCenter,
+								};
+							}
+
+							tmpSty.fontSize = 16;
+							var content = GUIContent.Temp(tooltip);
+							var size = new Vector2(winRec.width * .5f, tmpSty.CalcHeight(content, winRec.width * .5f) + 10);
+							var pos = Event.current.mousePosition;
+							pos -= new Vector2(size.x * .5f, size.y + 10);//Copy vector 
+
+							pos.x = ((pos.x + size.x) > winRec.xMax ? winRec.xMax - size.x : pos.x);
+							pos.y = (pos.y < winRec.yMin ? winRec.yMin : pos.y);
+
+							var ymp = new Rect(pos, size);
+							if(tooltip != null)
+							{
+								GUI.Label(ymp, tooltip, tmpSty);
+								//		Logger.LogInfo($"\nConstraint: {winRec}\nRect info: {ymp}\nTooltip: {tooltip}");
+							}
+						}
+					};
+					gui.ControlObject.OnUIEnter((() =>
+					{
+						act1 = () => act2(msg, getContainerRect(gui), enable?.Invoke() ?? true);
+						GUIobj.guiEvent.AddListener(act1);
+					}));
+					gui.ControlObject.OnUIExit(() => GUIobj.guiEvent.RemoveListener(act1));
+				});
+			}
 
 			public static void OnUIEnter<T>(this T gui, UnityAction enterAct) where T : UIBehaviour
 				=> gui.gameObject.OnUIEnter(enterAct);
@@ -1024,7 +1133,7 @@ namespace ProloAPI
 			}
 
 			static Coroutine resizeco;
-			public static void ResizeCustomUIViewport<T>(this T template, float UISpace, float viewPercent = -1) where T : BaseGuiEntry
+			public static void ResizeCustomUIViewport<T>(this T template, float UISpacePercent) where T : BaseGuiEntry
 			{
 				//if(makerViewportUISpace == null)
 				//{
@@ -1032,27 +1141,39 @@ namespace ProloAPI
 				//
 				//	return;
 				//}
-				if(viewPercent >= 0 && UISpace != viewPercent)
-					UISpace = viewPercent;
-				viewPercent = UISpace;
+				//if(viewPercent >= 0 && UISpacePercent != viewPercent)
+				//	UISpacePercent = viewPercent;
+				//viewPercent = UISpacePercent;
 
 				if(template != null)
 					template.OnGUIExists((gui) =>
 					{
 						IEnumerator func()
 						{
+							if(Debug) ProloLogger.LogDebug("Started reseizing UI");
 
-							var ctrlObj = gui?.ControlObject;
+							var ctrlObj = gui.ControlObject;
+
 							if(ctrlObj == null) yield break;
 
-							yield return new WaitUntil(() =>
-							ctrlObj.GetComponentInParent<ScrollRect>() != null);
+							if(!ctrlObj.GetComponentInParent<ScrollRect>())
+								yield return new WaitUntil(() =>
+								ctrlObj.GetComponentInParent<ScrollRect>() != null);
 
 							var scrollRect = ctrlObj.GetComponentInParent<ScrollRect>();
 
 							var viewLE = scrollRect.viewport.GetOrAddComponent<LayoutElement>();
 							float vHeight = Mathf.Abs(scrollRect.rectTransform.rect.height);
-							viewLE.minHeight = vHeight * viewPercent;
+
+							if(Debug) ProloLogger.LogDebug($"vHeight: {vHeight}");
+							if(Debug) ProloLogger.LogDebug($"UISpacePercent: {UISpacePercent}");
+
+							viewLE.minHeight =
+							(UISpacePercent > 0) ? vHeight * UISpacePercent :
+							(viewLE.minHeight > 0 ? viewLE.minHeight : -1);
+
+							if(Debug) ProloLogger.LogDebug(viewLE.minHeight);
+							if(Debug) ProloLogger.LogDebug("Finished reseizing UI");
 
 							LayoutRebuilder.MarkLayoutForRebuild(scrollRect.rectTransform);
 						}

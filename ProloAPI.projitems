@@ -9,10 +9,11 @@
     <Import_RootNamespace>Common</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ProloGUIBehaviour.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extentions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IConfiguration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IEqualityComparers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ProloBaseUnityPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProloUnityPlugin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SaveLoadManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Utilities.cs" />
   </ItemGroup>

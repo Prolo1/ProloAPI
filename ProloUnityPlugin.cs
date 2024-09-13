@@ -43,7 +43,7 @@ namespace ProloAPI
 
 	}
 
-	public abstract class ProloUnityPlugin<T1, T2> : ProloBaseUnityPlugin where T1 : ProloUnityPlugin<T1, T2> where T2 : IConfiguration
+	public abstract class ProloUnityPlugin<T1> : ProloBaseUnityPlugin where T1 : ProloUnityPlugin<T1>
 	{
 		protected ProloUnityPlugin()
 		{
