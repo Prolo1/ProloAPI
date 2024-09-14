@@ -8,7 +8,8 @@ public class ProloGUIBehaviour<T> : Singleton<T>
 
 	void OnGUI()
 	{
-		guiEvent.Invoke();
+
+		guiEvent?.Invoke();
 
 	}
 }
