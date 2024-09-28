@@ -15,15 +15,15 @@ using BepInEx.Configuration;
 
 namespace ProloAPI
 {
-	using Extentions;
+	using Extensions;
 
 	namespace Utilities
 	{
 		using KKAPI.Utilities;
 
-		using static Util_General;
+		using static PGeneral;
 
-		public class Util_General
+		public class PGeneral
 		{
 			public static bool Debug { get; set; } = false;
 			private static BaseSaveLoadManager _saveLoad = null;
@@ -54,18 +54,26 @@ namespace ProloAPI
 				get
 				{
 					if(_greyTex != null) return _greyTex;
-
-					_greyTex = new Texture2D(1, 1);
-					var pixels = _greyTex.GetPixels();
-					for(int a = 0; a < pixels.Length; ++a)
-						pixels[a] = Color.black;
-					_greyTex.SetPixels(pixels);
-					_greyTex.Apply();
-
-					return _greyTex;
+					return _greyTex = ColourTex(Color.black);
 				}
 			}
+			
+			/// <summary>
+			/// Creates a 1x1 texture that uses only one colour
+			/// </summary>
+			/// <param name="colour"></param>
+			/// <returns></returns>
+			public static Texture2D ColourTex(Color colour)
+			{
+				Texture2D tex = new Texture2D(1, 1);
+				var pixels = tex.GetPixels();
+				for(int a = 0; a < pixels.Length; ++a)
+					pixels[a] = colour;
+				tex.SetPixels(pixels);
+				tex.Apply();
 
+				return tex;
+			}
 
 			/// <summary>
 			/// Returns a list of the regestered handeler specified. returns empty list otherwise 
@@ -120,7 +128,7 @@ namespace ProloAPI
 			}
 		}
 
-		public class Util_GUI
+		public class PGUI
 		{
 			public static Action<ConfigEntryBase> ButtonDrawer(string name = null, string tip = null, Action onClick = null, bool vertical = true)
 			{

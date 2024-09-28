@@ -54,6 +54,7 @@ using static ChaFileDefine;
 using static BepInEx.Logging.LogLevel;
 //using UGUI_AssistLibrary;
 
+using static UnityEngine.GUI;
 namespace ProloAPI
 {
 	public class PointerEnter : MonoBehaviour, IPointerEnterHandler
@@ -78,7 +79,7 @@ namespace ProloAPI
 
 		public DependencyInfo(Type type, Version minTargetVer = null, Version maxTargetVer = null)
 		{
-			plugin = (T)GameObject.FindObjectOfType(type);
+			plugin = (T)UnityEngine.Object.FindObjectOfType(type);
 			Exists = plugin != null;
 			MinTargetVersion = minTargetVer ?? new Version();
 			MaxTargetVersion = maxTargetVer ?? new Version();
@@ -208,7 +209,7 @@ namespace ProloAPI
 			get
 			{
 				_search.Target = key;
-				return base.TryGetValue(_search, out var val) ? val : default;
+				return TryGetValue(_search, out var val) ? val : default;
 			}
 			set
 			{
@@ -222,19 +223,19 @@ namespace ProloAPI
 		{
 			var tmp = new WeakReference<Tkey>(key);
 			tmp.OnTargetCollected += () => { this.Remove(tmp); };
-			base.Add(tmp, val);
+			Add(tmp, val);
 		}
 
 		public void Remove(Tkey key)
 		{
 			_search.Target = key;
-			base.Remove(_search);
+			Remove(_search);
 		}
 
 		public bool ContainsKey(Tkey key)
 		{
 			_search.Target = key;
-			return base.ContainsKey(_search);
+			return ContainsKey(_search);
 		}
 	}
 
@@ -276,11 +277,11 @@ namespace ProloAPI
 	}
 
 
-	namespace Extentions
+	namespace Extensions
 	{
-		using static Utilities.Util_General;
+		using static Utilities.PGeneral;
 
-		public static class Ext_General
+		public static class PGeneral
 		{
 
 			/// <summary>
@@ -704,10 +705,10 @@ namespace ProloAPI
 			public static int HierarchyLevelIndex(this Transform obj) => obj.parent ? obj.parent.HierarchyLevelIndex() + 1 : 0;
 			public static int HierarchyLevelIndex(this GameObject obj) => obj.transform.HierarchyLevelIndex();
 
-			
+
 		}
 
-		public static class Ext_Game
+		public static class PGame
 		{
 			public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
 			public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
@@ -739,7 +740,7 @@ namespace ProloAPI
 
 		}
 
-		public static class Ext_GUI
+		public static class PGUI
 		{
 			public static T AddToCustomGUILayout<T>(this T gui, float viewpercent = -1, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
 			{
@@ -862,7 +863,7 @@ namespace ProloAPI
 				//Create Layout Element GameObject
 				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 
-				
+
 
 
 				act1();
@@ -886,7 +887,7 @@ namespace ProloAPI
 				var ele = par.GetOrAddComponent<LayoutElement>();
 				ele.minWidth = -1;
 				ele.minHeight = -1;
-				ele.preferredHeight = System.Math.Max(ele?.preferredHeight ?? -1, ctrlObj.GetOrAddComponent<LayoutElement>()?.minHeight ?? ele?.preferredHeight ?? -1);
+				ele.preferredHeight = Math.Max(ele?.preferredHeight ?? -1, ctrlObj.GetOrAddComponent<LayoutElement>()?.minHeight ?? ele?.preferredHeight ?? -1);
 				ele.preferredWidth =
 #if HONEY_API
 				scrollRect.GetComponent<RectTransform>().rect.width;
@@ -908,7 +909,7 @@ namespace ProloAPI
 
 					par = par.GetComponentsInChildren<HorizontalLayoutGroup>(2)?
 						.FirstOrNull((elem) => elem.gameObject.GetComponent<HorizontalLayoutGroup>())?.transform ??
-						GameObject.Instantiate<GameObject>(new GameObject("HorizontalLayoutGroup"), par)?.transform;
+						UnityEngine.Object.Instantiate(new GameObject("HorizontalLayoutGroup"), par)?.transform;
 					par = par.gameObject.GetOrAddComponent<RectTransform>().transform;//May need this line (I totally do)
 
 					//	await Task.Yield();
@@ -939,7 +940,7 @@ namespace ProloAPI
 				if(Debug) ProloLogger.LogDebug("Check: " + ++countcheck);
 				var rList = ctrlObj.GetComponents<LayoutElement>();
 				for(int a = 1; a < rList.Length; ++a)
-					GameObject.DestroyImmediate(rList[a]);
+					UnityEngine.Object.DestroyImmediate(rList[a]);
 
 
 
@@ -986,7 +987,7 @@ namespace ProloAPI
 					!thisLE.GetComponent<HorizontalOrVerticalLayoutGroup>();
 				if(check)
 				{
-					var tmp = GameObject.Instantiate(new GameObject(), thisLE.transform);
+					var tmp = UnityEngine.Object.Instantiate(new GameObject(), thisLE.transform);
 					var hlog = tmp.AddComponent<HorizontalLayoutGroup>();
 					hlog.childAlignment = TextAnchor.MiddleLeft;
 					hlog.childControlHeight = true;
@@ -1054,7 +1055,8 @@ namespace ProloAPI
 								var tex = new Texture2D(1, 1);
 								tex.SetPixel(0, 0, new Color(0, 0, 0, .5f));
 								tex.Apply();
-								tmpSty = new GUIStyle(GUI.skin.label)
+
+								tmpSty = new GUIStyle(skin.label)
 								{
 									normal = new GUIStyleState
 									{
@@ -1078,17 +1080,19 @@ namespace ProloAPI
 							var ymp = new Rect(pos, size);
 							if(tooltip != null)
 							{
-								GUI.Label(ymp, tooltip, tmpSty);
+
+
+								Label(ymp, tooltip, (GUIStyle)tmpSty);
 								//		Logger.LogInfo($"\nConstraint: {winRec}\nRect info: {ymp}\nTooltip: {tooltip}");
 							}
 						}
 					};
-					gui.ControlObject.OnUIEnter((() =>
+					OnUIEnter(gui.ControlObject, (UnityAction)(() =>
 					{
 						act1 = () => act2(msg, getContainerRect(gui), enable?.Invoke() ?? true);
 						GUIobj.guiEvent.AddListener(act1);
 					}));
-					gui.ControlObject.OnUIExit(() => GUIobj.guiEvent.RemoveListener(act1));
+					OnUIExit(gui.ControlObject, (UnityAction)(() => GUIobj.guiEvent.RemoveListener(act1)));
 				});
 			}
 
@@ -1120,11 +1124,11 @@ namespace ProloAPI
 			{
 
 				Coroutine co = null;
-				IEnumerator Func(UnityAction acti)
+				IEnumerator Func(UnityAction act)
 				{
 					yield return new WaitWhile(() =>
 					{
-						acti?.Invoke();
+						act?.Invoke();
 						return true;
 					});
 				}
@@ -1135,16 +1139,7 @@ namespace ProloAPI
 			static Coroutine resizeco;
 			public static void ResizeCustomUIViewport<T>(this T template, float UISpacePercent) where T : BaseGuiEntry
 			{
-				//if(makerViewportUISpace == null)
-				//{
-				//	Logger?.LogWarning("Config not fully enabled. makerViewportUISpace does not exist.");
-				//
-				//	return;
-				//}
-				//if(viewPercent >= 0 && UISpacePercent != viewPercent)
-				//	UISpacePercent = viewPercent;
-				//viewPercent = UISpacePercent;
-
+				 
 				if(template != null)
 					template.OnGUIExists((gui) =>
 					{

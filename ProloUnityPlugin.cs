@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
 
-using ProloAPI.Extentions;
+using ProloAPI.Extensions;
 
 using UnityEngine.Events;
 
