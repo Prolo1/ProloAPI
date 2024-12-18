@@ -1039,7 +1039,7 @@ namespace ProloAPI
 				return tmp;
 			}
 			static GUIStyle tmpSty = null;
-			public static void tooltipMsg<T>(this BaseGuiEntry gui, string msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour
+			public static B tooltipMsg<T, B>(this B gui, string msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour where B : BaseGuiEntry
 			{
 				gui.OnGUIExists(_ =>
 				{
@@ -1094,6 +1094,8 @@ namespace ProloAPI
 					}));
 					OnUIExit(gui.ControlObject, (UnityAction)(() => GUIobj.guiEvent.RemoveListener(act1)));
 				});
+
+				return gui;
 			}
 
 			public static void OnUIEnter<T>(this T gui, UnityAction enterAct) where T : UIBehaviour
@@ -1139,7 +1141,7 @@ namespace ProloAPI
 			static Coroutine resizeco;
 			public static void ResizeCustomUIViewport<T>(this T template, float UISpacePercent) where T : BaseGuiEntry
 			{
-				 
+
 				if(template != null)
 					template.OnGUIExists((gui) =>
 					{
