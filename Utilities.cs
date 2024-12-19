@@ -11,7 +11,9 @@ using UnityEngine;
 using KKAPI.Chara;
 using BepInEx.Configuration;
 
-
+#if HONEY_API
+using AIChara;
+#endif
 
 namespace ProloAPI
 {
@@ -19,6 +21,7 @@ namespace ProloAPI
 
 	namespace Utilities
 	{
+		using KKAPI;
 		using KKAPI.Utilities;
 
 		using static PGeneral;
@@ -30,6 +33,58 @@ namespace ProloAPI
 
 			internal static readonly ManualLogSource ProloLogger = BepInEx.Logging.Logger.CreateLogSource("Prolo Logger");
 
+			/// <summary>
+			/// force the extra data of a character coordinate to load again
+			/// </summary>
+			/// <param name="coord"></param>
+			/// <param name="control"></param>
+			public static void ForceInvokeCoordBeingLoaded(ChaFileCoordinate coord, ChaControl control)
+			{
+				var ctrlers = CharacterApi.GetBehaviours(control);
+				//save coordinate states
+				var states = ctrlers?.ToDictionary((x) => x, (y) => y.ControllerRegistration.MaintainCoordinateState);
+
+				foreach(var ctrl in ctrlers)
+					ctrl.ControllerRegistration.MaintainCoordinateState = false;
+
+				typeof(CharacterApi).GetMethod("OnCoordinateBeingLoaded",
+							BindingFlags.Static | BindingFlags.NonPublic,
+							types: new Type[] { typeof(ChaControl), typeof(ChaFileCoordinate) },
+							binder: null, modifiers: null)
+							.Invoke(null, new object[]
+							{control, coord});
+
+				//restore coordinate states
+				foreach(var ctrl in ctrlers)
+					ctrl.ControllerRegistration.MaintainCoordinateState = states[ctrl];
+
+			}
+		
+			/// <summary>
+			/// Force the extra data of a character card to load again
+			/// </summary>
+			/// <param name="control"></param>
+			public static void ForceInvokeOnReload(ChaControl control)
+			{
+				var ctrlers = CharacterApi.GetBehaviours(control);
+				//save coordinate states
+				var states = ctrlers?.ToDictionary((x) => x, (y) => y.ControllerRegistration.MaintainState);
+
+				foreach(var ctrl in ctrlers)
+					ctrl.ControllerRegistration.MaintainState = false;
+
+				typeof(CharacterApi).GetMethod("ReloadChara",
+							BindingFlags.Static | BindingFlags.NonPublic,
+							types: new Type[] { typeof(ChaControl) },
+							binder: null, modifiers: null)
+							.Invoke(null, new object[]
+							{control});
+
+				//restore coordinate states
+				foreach(var ctrl in ctrlers)
+					ctrl.ControllerRegistration.MaintainState = states[ctrl];
+
+			}
 
 			public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
 			{
@@ -57,7 +112,7 @@ namespace ProloAPI
 					return _greyTex = ColourTex(Color.black);
 				}
 			}
-			
+
 			/// <summary>
 			/// Creates a 1x1 texture that uses only one colour
 			/// </summary>

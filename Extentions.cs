@@ -738,6 +738,18 @@ namespace ProloAPI
 				};
 			}
 
+			public static void ForceInvokeCoordBeingLoaded(this CharaCustomFunctionController ctrl, ChaFileCoordinate coord)
+				=> ctrl.ChaControl.ForceInvokeCoordBeingLoaded(coord);
+
+			public static void ForceInvokeCoordBeingLoaded(this ChaControl ctrl, ChaFileCoordinate coord)
+				=> Utilities.PGeneral.ForceInvokeCoordBeingLoaded(coord, ctrl);
+
+			public static void ForceInvokeOnReload(this CharaCustomFunctionController ctrl)
+				=> ctrl.ChaControl.ForceInvokeOnReload();
+
+			public static void ForceInvokeOnReload(this ChaControl ctrl)
+				=> Utilities.PGeneral.ForceInvokeOnReload(ctrl);
+
 		}
 
 		public static class PGUI
