@@ -5,15 +5,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using BepInEx.Logging;
-using BepInEx;
 using UnityEngine;
-using KKAPI.Chara;
+
+using BepInEx;
+using BepInEx.Logging;
 using BepInEx.Configuration;
 
 #if HONEY_API
 using AIChara;
 #endif
+#if !IL2CPP
+using KKAPI.Chara;
+#endif
+
 
 namespace ProloAPI
 {
@@ -22,7 +26,10 @@ namespace ProloAPI
 	namespace Utilities
 	{
 		using KKAPI;
+
+#if !IL2CPP
 		using KKAPI.Utilities;
+#endif
 
 		using static PGeneral;
 
@@ -44,7 +51,7 @@ namespace ProloAPI
 				//save coordinate states
 				var states = ctrlers?.ToDictionary((x) => x, (y) => y.ControllerRegistration.MaintainCoordinateState);
 
-				foreach(var ctrl in ctrlers)
+				foreach (var ctrl in ctrlers)
 					ctrl.ControllerRegistration.MaintainCoordinateState = false;
 
 				typeof(CharacterApi).GetMethod("OnCoordinateBeingLoaded",
@@ -55,11 +62,11 @@ namespace ProloAPI
 							{control, coord});
 
 				//restore coordinate states
-				foreach(var ctrl in ctrlers)
+				foreach (var ctrl in ctrlers)
 					ctrl.ControllerRegistration.MaintainCoordinateState = states[ctrl];
 
 			}
-		
+
 			/// <summary>
 			/// Force the extra data of a character card to load again
 			/// </summary>
@@ -70,7 +77,7 @@ namespace ProloAPI
 				//save coordinate states
 				var states = ctrlers?.ToDictionary((x) => x, (y) => y.ControllerRegistration.MaintainState);
 
-				foreach(var ctrl in ctrlers)
+				foreach (var ctrl in ctrlers)
 					ctrl.ControllerRegistration.MaintainState = false;
 
 				typeof(CharacterApi).GetMethod("ReloadChara",
@@ -81,14 +88,14 @@ namespace ProloAPI
 							{control});
 
 				//restore coordinate states
-				foreach(var ctrl in ctrlers)
+				foreach (var ctrl in ctrlers)
 					ctrl.ControllerRegistration.MaintainState = states[ctrl];
 
 			}
 
 			public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
 			{
-				if(_saveLoad == null || !(_saveLoad is Tmng))
+				if (_saveLoad == null || !(_saveLoad is Tmng))
 					_saveLoad = (Tmng)Activator.CreateInstance(typeof(Tmng));
 
 				return (Tmng)_saveLoad;
@@ -99,17 +106,21 @@ namespace ProloAPI
 			/// </summary>
 			/// <typeparam name="Tinst"></typeparam>
 			/// <returns></returns>
+#if IL2CPP
+			internal static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPluginIL2CPP
+				=> (Tinst)ProloBaseUnityPluginIL2CPP.Instances.First((p) => p is Tinst);
+#else
 			internal static Tinst GetInstance<Tinst>() where Tinst : ProloBaseUnityPlugin
-			 => (Tinst)ProloBaseUnityPlugin.Instances.First((p) => p is Tinst);
-
+				=> (Tinst)ProloBaseUnityPlugin.Instances.First((p) => p is Tinst);
+#endif
 
 			private static Texture2D _greyTex = null;
 			public static Texture2D greyTex
 			{
 				get
 				{
-					if(_greyTex != null) return _greyTex;
-					return _greyTex = ColourTex(Color.black);
+					if (_greyTex != null) return _greyTex;
+					return _greyTex = ColourTexture(Color.black);
 				}
 			}
 
@@ -118,11 +129,11 @@ namespace ProloAPI
 			/// </summary>
 			/// <param name="colour"></param>
 			/// <returns></returns>
-			public static Texture2D ColourTex(Color colour)
+			public static Texture2D ColourTexture(Color colour)
 			{
 				Texture2D tex = new Texture2D(1, 1);
 				var pixels = tex.GetPixels();
-				for(int a = 0; a < pixels.Length; ++a)
+				for (int a = 0; a < pixels.Length; ++a)
 					pixels[a] = colour;
 				tex.SetPixels(pixels);
 				tex.Apply();
@@ -130,6 +141,7 @@ namespace ProloAPI
 				return tex;
 			}
 
+#if !IL2CPP
 			/// <summary>
 			/// Returns a list of the regestered handeler specified. returns empty list otherwise 
 			/// </summary>
@@ -137,13 +149,13 @@ namespace ProloAPI
 			/// <returns></returns>
 			public static IEnumerable<T> GetAllChaFuncCtrlOfType<T>() where T : CharaCustomFunctionController
 			{
-				foreach(var hnd in CharacterApi.RegisteredHandlers)
-					if(hnd.ControllerType == typeof(T))
+				foreach (var hnd in CharacterApi.RegisteredHandlers)
+					if (hnd.ControllerType == typeof(T))
 						return hnd.Instances.Cast<T>();
 
 				return new T[] { };
 			}
-
+#endif
 			public static MemoryStream ResourceGrabber(string name, Assembly ass = null, string[] res = null, MemoryStream mem = null)
 			{
 				/**This stuff will be used later*/
@@ -168,7 +180,20 @@ namespace ProloAPI
 				tmp.transform.parent = parent;
 				return tmp;
 			}
+#if IL2CPP
+			public static GameObject CreateGameObject(string name, params Il2CppSystem.Type[] components)
+			{
+				var tmp = new GameObject(name, components);
+				return tmp;
+			}
 
+			public static GameObject CreateGameObject(string name, Transform parent, params Il2CppSystem.Type[] components)
+			{
+				var tmp = new GameObject(name, components);
+				tmp.transform.parent = parent;
+				return tmp;
+			}
+#else
 			public static GameObject CreateGameObject(string name, params Type[] components)
 			{
 				var tmp = new GameObject(name, components);
@@ -181,7 +206,9 @@ namespace ProloAPI
 				tmp.transform.parent = parent;
 				return tmp;
 			}
+#endif
 		}
+
 
 		public class PGUI
 		{
@@ -189,19 +216,19 @@ namespace ProloAPI
 			{
 				return new Action<ConfigEntryBase>((cfgEntry) =>
 				{
-					if(vertical)
+					if (vertical)
 						GUILayout.BeginVertical();
 					else
 						GUILayout.BeginHorizontal();
 
 					GUILayout.Space(5);
 
-					if(GUILayout.Button(new GUIContent { text = name ?? cfgEntry.Definition.Key, tooltip = tip ?? cfgEntry.Description.Description }, GUILayout.ExpandWidth(true)) && onClick != null)
+					if (GUILayout.Button(new GUIContent { text = name ?? cfgEntry.Definition.Key, tooltip = tip ?? cfgEntry.Description.Description }, GUILayout.ExpandWidth(true)) && onClick != null)
 						onClick();
 
 					GUILayout.Space(5);
 
-					if(vertical)
+					if (vertical)
 						GUILayout.EndVertical();
 					else
 						GUILayout.EndHorizontal();
@@ -217,18 +244,18 @@ namespace ProloAPI
 
 				return new Action<ConfigEntryBase>((cfgEntry) =>
 				{
-					if(vertical)
+					if (vertical)
 						GUILayout.BeginVertical();
 					else
 						GUILayout.BeginHorizontal();
 
 					items = listUpdate != null ? listUpdate(items) : items;
 
-					if((Math.Max(-1, Math.Min(items.Length - 1, selectedItem))) < 0)
+					if ((Math.Max(-1, Math.Min(items.Length - 1, selectedItem))) < 0)
 						selectedItem = Math.Max(0, Math.Min
 						(items.Length - 1, selectedItem));
 
-					if(selectedItem < 0) return;
+					if (selectedItem < 0) return;
 
 
 					try
@@ -236,8 +263,8 @@ namespace ProloAPI
 						GUILayout.Space(3);
 						bool btn;
 						int maxWidth = 350, maxHeight = 200;
-						if(items.Length > 0)
-							if((btn = GUILayout.Button(new GUIContent { text = name ?? $"{cfgEntry.Definition.Key} {items[selectedItem]}", tooltip = tip ?? cfgEntry.Description.Description },
+						if (items.Length > 0)
+							if ((btn = GUILayout.Button(new GUIContent { text = name ?? $"{cfgEntry.Definition.Key} {items[selectedItem]}", tooltip = tip ?? cfgEntry.Description.Description },
 								 GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true), GUILayout.MaxWidth(maxWidth))) || selectingItem)
 							{
 								selectingItem = !(btn && selectingItem);//if dropdown btn was pressed
@@ -247,7 +274,7 @@ namespace ProloAPI
 									GUILayout.ExpandHeight(true), GUILayout.Height(150), GUILayout.MaxHeight(maxHeight), GUILayout.MaxWidth(maxWidth));
 
 								var select = GUILayout.SelectionGrid(selectedItem, items, 1, GUILayout.ExpandWidth(true));
-								if(select != selectedItem) { selectingItem = false; select = onSelect != null ? onSelect(select) : select; }
+								if (select != selectedItem) { selectingItem = false; select = onSelect != null ? onSelect(select) : select; }
 								selectedItem = select;
 
 								GUILayout.EndScrollView();
@@ -255,12 +282,12 @@ namespace ProloAPI
 
 						GUILayout.Space(5);
 					}
-					catch(Exception e)
+					catch (Exception e)
 					{
 						ProloLogger.LogError(e);
 					}
 
-					if(vertical)
+					if (vertical)
 						GUILayout.EndVertical();
 					else
 						GUILayout.EndHorizontal();
@@ -279,7 +306,7 @@ namespace ProloAPI
 				{
 					void BeginDirection(bool invert = false, params GUILayoutOption[] opt)
 					{
-						if(vertical && !invert)
+						if (vertical && !invert)
 							GUILayout.BeginVertical(opt);
 						else
 							GUILayout.BeginHorizontal(opt);
@@ -287,7 +314,7 @@ namespace ProloAPI
 
 					void EndDirection(bool invert = false)
 					{
-						if(vertical && !invert)
+						if (vertical && !invert)
 							GUILayout.EndVertical();
 						else
 							GUILayout.EndHorizontal();
@@ -298,11 +325,11 @@ namespace ProloAPI
 
 					items = listUpdate?.Invoke(items) ?? items;
 
-					if(!items?.InRange(selectedItem) ?? false)
+					if (!items?.InRange(selectedItem) ?? false)
 						selectedItem = Math.Max(0, Math.Min
 						(items.Length - 1, selectedItem));
 
-					if(!items?.InRange(selectedItem) ?? true)
+					if (!items?.InRange(selectedItem) ?? true)
 					{
 
 						EndDirection();
@@ -314,12 +341,12 @@ namespace ProloAPI
 						GUILayout.Space(3);
 						bool btn;
 						//int maxWidth = 350, maxHeight = 200;
-						if(items.Length > 0)
+						if (items.Length > 0)
 						{
 							var tmpcontent = content?.Invoke(items, selectedItem);
-							if(tmpcontent != null)
+							if (tmpcontent != null)
 								tmpcontent.text += selectingItem ? " ▲" : " ▼";//▼▾
-							if((btn = GUILayout.Button(tmpcontent ?? new GUIContent(selectingItem ? "▲" : "▼"),
+							if ((btn = GUILayout.Button(tmpcontent ?? new GUIContent(selectingItem ? "▲" : "▼"),
 								 GUILayout.ExpandWidth(vertical), GUILayout.ExpandHeight(!vertical))) || selectingItem)
 							{
 								selectingItem = !(btn && selectingItem);//if dropdown btn was pressed
@@ -347,7 +374,7 @@ namespace ProloAPI
 								  );
 
 
-								if(select != selectedItem) { selectingItem = false; select = onSelect != null ? onSelect(select) : select; }
+								if (select != selectedItem) { selectingItem = false; select = onSelect != null ? onSelect(select) : select; }
 								selectedItem = select;
 
 								GUI.EndScrollView();
@@ -359,7 +386,7 @@ namespace ProloAPI
 
 						GUILayout.Space(5);
 					}
-					catch(Exception e)
+					catch (Exception e)
 					{
 						ProloLogger.LogError(e);
 					}

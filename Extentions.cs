@@ -11,18 +11,7 @@ using System.Text.RegularExpressions;
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Logging;
-using KKAPI;
-using KKAPI.Chara;
-using KKAPI.Maker;
-using KKAPI.Studio;
-using KKAPI.Utilities;
-using KKAPI.Maker.UI;
-using ExtensibleSaveFormat;
-using MessagePack.Resolvers;
-using MessagePack.Unity;
-using MessagePack;
-using Studio;
+
 //using HarmonyLib;
 
 using UnityEngine;
@@ -31,20 +20,21 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using UniRx;
+#if IL2CPP
+using ILLGames.Extensions; 
+#else
 using UGUI_AssistLibrary;
-
-
+using KKAPI.Maker.UI;
+using ExtensibleSaveFormat;
+using KKAPI.Maker;
+#endif
 
 
 
 
 
 #if HONEY_API
-
 using AIChara;
-using static AIChara.ChaFileDefine;
-#else
-using static ChaFileDefine;
 #endif
 
 //using static Character_Morpher.CharaMorpher_Core;
@@ -55,8 +45,12 @@ using static BepInEx.Logging.LogLevel;
 //using UGUI_AssistLibrary;
 
 using static UnityEngine.GUI;
+using System.Runtime.CompilerServices;
 namespace ProloAPI
 {
+
+
+#if !IL2CPP
 	public class PointerEnter : MonoBehaviour, IPointerEnterHandler
 	{
 		public void OnPointerEnter(PointerEventData eventData)
@@ -146,14 +140,15 @@ namespace ProloAPI
 		public WeakReference(T target, bool trackResurrection) : base(target, trackResurrection)
 		{
 			bool last = true;
+
 			this.ObserveEveryValueChanged(v => v.IsAlive).Subscribe(v =>
-			{
-				if(v != last)
-				{
-					last = v;
-					OnTargetCollected?.Invoke();
-				}
-			});
+		   {
+			   if(v != last)
+			   {
+				   last = v;
+				   OnTargetCollected?.Invoke();
+			   }
+		   });
 		}
 
 		public override bool Equals(object obj)
@@ -238,6 +233,7 @@ namespace ProloAPI
 			return ContainsKey(_search);
 		}
 	}
+#endif
 
 
 	/// <summary>
@@ -404,7 +400,7 @@ namespace ProloAPI
 			/// <param name="file">config file to search</param>
 			/// <param name="sec">section to search (optional)</param>
 			/// <returns>  <see cref="List{KeyValuePair{ConfigDefinition, string}}"/> list of all orphaned entries </returns>
-			public static List<KeyValuePair<ConfigDefinition, string>> GetUnorderedOrphanedEntries(this ConfigFile file, string sec = "")
+			public static List<KeyValuePair<ConfigDefinition, string>> GetUnorderedOrphanedEntries(this ConfigFile file, string sec = null)
 			{
 				Dictionary<ConfigDefinition, string> OrphanedEntries = new Dictionary<ConfigDefinition, string>();
 				List<KeyValuePair<ConfigDefinition, string>> orderedOrphanedEntries = new List<KeyValuePair<ConfigDefinition, string>>();
@@ -425,7 +421,7 @@ namespace ProloAPI
 					}
 
 					string[] array2 = text.Split(new char[1] { '=' }, 2);
-					if(sec == section || sec.IsNullOrEmpty())
+					if(sec == section || sec == null || sec == "")
 						if(array2.Length == 2)
 						{
 							string key = array2[0].Trim();
@@ -486,58 +482,47 @@ namespace ProloAPI
 			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, bool resetOnLaunch) => v1?.ConfigDefaulter(resetOnLaunch, (T)v1.DefaultValue) ?? v1;
 			public static ConfigEntry<T> ConfigDefaulter<T>(this ConfigEntry<T> v1, IConfiguration config) => v1?.ConfigDefaulter(config.resetOnLaunch.Value);
 
+#if IL2CPP
+			//	//
+			//	// Summary:
+			//	//     Create texture from an image stored in a byte array, for example a png file read
+			//	//     from disk.
+			//	public static Texture2D LoadTexture(this byte[] texBytes, TextureFormat format = TextureFormat.ARGB32, bool mipMaps = false)
+			//	{
+			//		if(texBytes == null)
+			//		{
+			//			throw new ArgumentNullException("texBytes");
+			//		}
+			//
+			//		Texture2D texture2D = new Texture2D(2, 2, format, mipMaps);
+			//		texture2D.LoadImage(texBytes);
+			//		return texture2D;
+			//	}
+#endif
+
+			public static bool IsNullOrEmpty<T>(this ICollection<T> thing) => thing == null || thing.Count > 0;
+			//			public static bool IsNullOrEmpty<T>(this IEnumerable<T> thing) => thing == null || thing.Count() > 0;
+
+			//#if !KK
+			//			public static bool IsNullOrEmpty<T>(this IReadOnlyCollection<T> thing) => thing == null || thing.Count > 0;
+			//#endif
 			/// <summary>
 			/// Crates Image Texture based on path
 			/// </summary>
 			/// <param name="path">directory path to image (i.e. C:/path/to/image.png)</param>
 			/// <param name="data">raw image data that will be read instead of path if not null or empty</param>
 			/// <returns>An Texture2D created from path if passed, else a black texture</returns>
-			public static Texture2D CreateTexture(this string path, byte[] data = null) =>
-				(!data.IsNullOrEmpty() || !File.Exists(path)) ?
-				data?.LoadTexture(TextureFormat.RGBA32) ?? Texture2D.blackTexture.ToTexture2D() :
-				File.ReadAllBytes(path)?.LoadTexture(TextureFormat.RGBA32) ??
-				Texture2D.blackTexture.ToTexture2D();
-
-			/// <summary>
-			/// Makes sure GUI is initialized before code execution
-			/// </summary>
-			/// <param name="gui"></param>
-			/// <param name="act"></param>
-			/// <returns>Reference to original <typeparamref name="T"/></returns>
-			public static T OnGUIExists<T>(this T gui, UnityAction<T> act) where T : BaseGuiEntry
+			public static Texture2D CreateTexture(this string path, byte[] data = null)
 			{
-				if(gui == null) return null;
+				Texture2D texture = ColourTexture(Color.black);
+				if(!data.IsNullOrEmpty() || !File.Exists(path))
+					texture.LoadImage(data);
+				else
+					texture.LoadImage(File.ReadAllBytes(path));
 
-#if false
-			if(!gui.Exists)
-			{
-				var ob = gui.ObserveEveryValueChanged(p => p.Exists, FrameCountType.EndOfFrame);
-				var sub = ob.Subscribe(val =>
-				{
-					if(!val) return;
-					act(gui);
-				});
+				return texture;
 			}
-			else
-			{
-				act(gui);
-			}
-#else
-				GetInstance<ProloBaseUnityPlugin>().StartCoroutine(func(gui, act));
-				IEnumerator func(T gui1, UnityAction<T> act1)
-				{
-					if(!gui1.Exists)
-						while(!gui1.Exists)
-							yield return new WaitForEndOfFrame();//the thing needs to exist first
 
-					act1(gui);
-
-					yield break;
-				}
-#endif
-
-				return gui;
-			}
 
 			/// <summary>
 			/// Gets the <see cref="TMP_InputField"/> or <see cref="InputField"/> component attached to this object or it's children
@@ -708,6 +693,7 @@ namespace ProloAPI
 
 		}
 
+#if !IL2CPP
 		public static class PGame
 		{
 			public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
@@ -751,9 +737,49 @@ namespace ProloAPI
 				=> Utilities.PGeneral.ForceInvokeOnReload(ctrl);
 
 		}
-
 		public static class PGUI
 		{
+			/// <summary>
+			/// Makes sure GUI is initialized before code execution
+			/// </summary>
+			/// <param name="gui"></param>
+			/// <param name="act"></param>
+			/// <returns>Reference to original <typeparamref name="T"/></returns>
+			public static T OnGUIExists<T>(this T gui, UnityAction<T> act) where T : BaseGuiEntry
+			{
+				if(gui == null) return null;
+
+#if false
+			if(!gui.Exists)
+			{
+				var ob = gui.ObserveEveryValueChanged(p => p.Exists, FrameCountType.EndOfFrame);
+				var sub = ob.Subscribe(val =>
+				{
+					if(!val) return;
+					act(gui);
+				});
+			}
+			else
+			{
+				act(gui);
+			}
+#else
+				GetInstance<ProloBaseUnityPlugin>().StartCoroutine(func(gui, act));
+				IEnumerator func(T gui1, UnityAction<T> act1)
+				{
+					if(!gui1.Exists)
+						while(!gui1.Exists)
+							yield return new WaitForEndOfFrame();//the thing needs to exist first
+
+					act1(gui);
+
+					yield break;
+				}
+#endif
+
+				return gui;
+			}
+
 			public static T AddToCustomGUILayout<T>(this T gui, float viewpercent = -1, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
 			{
 #if true //TODO: fix new UI loading in KK
@@ -1042,6 +1068,7 @@ namespace ProloAPI
 				LayoutRebuilder.MarkLayoutForRebuild(scrollRect.GetComponent<RectTransform>());
 				yield break;
 			}
+
 			static Rect getContainerRect(BaseGuiEntry gui)
 			{
 				Rect tmp = new Rect(gui.ControlObject.GetComponentInParent<ScrollRect>().rectTransform.rect);
@@ -1050,6 +1077,7 @@ namespace ProloAPI
 
 				return tmp;
 			}
+
 			static GUIStyle tmpSty = null;
 			public static B tooltipMsg<T, B>(this B gui, string msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour where B : BaseGuiEntry
 			{
@@ -1131,7 +1159,6 @@ namespace ProloAPI
 
 			}
 
-
 			public static void OnUIStay<T>(this T gui, UnityAction stayAct, UnityAction enterAct = null, UnityAction endAct = null) where T : UIBehaviour
 				=> gui.gameObject.OnUIStay(stayAct, enterAct, endAct);
 			public static void OnUIStay(this GameObject gui, UnityAction stayAct, UnityAction enterAct = null, UnityAction endAct = null)
@@ -1146,6 +1173,7 @@ namespace ProloAPI
 						return true;
 					});
 				}
+
 				gui.OnUIEnter(() => { enterAct?.Invoke(); co = GetInstance<ProloBaseUnityPlugin>().StartCoroutine(Func(stayAct)); });
 				gui.OnUIExit(() => { if(co != null) endAct?.Invoke(); GetInstance<ProloBaseUnityPlugin>().StopCoroutine(co); });
 			}
@@ -1195,5 +1223,6 @@ namespace ProloAPI
 
 
 		}
+#endif
 	}
 }
