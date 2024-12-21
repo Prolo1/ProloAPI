@@ -6,10 +6,7 @@ public class ProloGUIBehaviour<T> : Singleton<T>
 {
 	public UnityEvent guiEvent { get; } = new UnityEvent();
 
-	void OnGUI()
-	{
+	void OnGUI() => guiEvent?.Invoke();
 
-		guiEvent?.Invoke();
 
-	}
 }
