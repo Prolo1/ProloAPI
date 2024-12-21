@@ -27,6 +27,7 @@ using UGUI_AssistLibrary;
 using KKAPI.Maker.UI;
 using ExtensibleSaveFormat;
 using KKAPI.Maker;
+using KKAPI.Chara;
 #endif
 
 
@@ -48,7 +49,6 @@ using static UnityEngine.GUI;
 using System.Runtime.CompilerServices;
 namespace ProloAPI
 {
-
 
 #if !IL2CPP
 	public class PointerEnter : MonoBehaviour, IPointerEnterHandler
