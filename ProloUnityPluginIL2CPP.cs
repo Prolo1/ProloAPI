@@ -25,22 +25,33 @@ namespace ProloAPI
 {
 #if IL2CPP
 
-	public interface IProloPluginManager 
+	public interface IProloPluginManager
 	{
 		public BepInPlugin Metadata { get; }
 		public ProloBaseUnityPluginIL2CPP Instance { get; }
 		public ManualLogSource Log { get; }
 		public BasePlugin Plugin { get; }
-		  
+
 	}
-	public abstract class ProloPluginManager<T1> : BasePlugin, IProloPluginManager where T1 : ProloUnityPluginIL2CPP<T1>
+	public abstract class ProloPluginManager<T1> : BasePlugin, IProloPluginManager where T1 : ProloBaseUnityPluginIL2CPP
 	{
 		public ProloPluginManager()
 		{
+			this.InitHooks();
 			m_metadata = MetadataHelper.GetMetadata(this);
-			m_instance = AddComponent<ProloUnityPluginIL2CPP<T1>>();
-			m_instance.manager = this;
 			m_plugin = this;
+		}
+
+		public override void Load()
+		{
+			 
+			ProloHooks.OnGameStart += () =>
+			{
+				m_instance = AddComponent<T1>();
+				m_instance.manager = this;
+			};
+			Log.LogInfo($"Loaded {Metadata.Name} v{Metadata.Version}");
+
 		}
 
 		BepInPlugin m_metadata;
@@ -65,12 +76,11 @@ namespace ProloAPI
 			public override string ToString() => $"{ModName} : {GUID} : {Version}";
 		}
 
-		protected ProloBaseUnityPluginIL2CPP()
+		public ProloBaseUnityPluginIL2CPP()
 		{
 			ProInfo = new ProloInfo { ModName = manager?.Metadata.Name ?? "", GUID = manager?.Metadata.GUID ?? "", Version = manager?.Metadata.Version.ToString() ?? "" };
 			Instance = (manager?.Instance ?? this);
 			Instances.Add(Instance);
-
 		}
 
 		~ProloBaseUnityPluginIL2CPP() => Instances.Remove(Instance);
@@ -78,7 +88,7 @@ namespace ProloAPI
 
 
 		internal IProloPluginManager manager;
-		public ProloInfo ProInfo { get; }
+		public ProloInfo  ProInfo { get; }
 		public ProloBaseUnityPluginIL2CPP Instance { get; }
 		public ManualLogSource Logger { get => manager.Log; }
 

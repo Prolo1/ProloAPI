@@ -9,11 +9,13 @@
     <Import_RootNamespace>ProloAPI</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ProloCharaCustomFunctionControllerIL2CPP.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ProloGUIBehaviour.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extentions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IConfiguration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IEqualityComparers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ProloIL2CPPPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProloHooks.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProloUnityPluginIL2CPP.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ProloUnityPlugin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SaveLoadManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Utilities.cs" />

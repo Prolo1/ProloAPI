@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization; 
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
+using System.Text; 
 
 using MessagePack.Resolvers;
 
 using MessagePack.Unity;
 
 using UnityEngine;
+using MessagePack;
+#if IL2CPP
+using System.Runtime.Serialization.Json;
+#endif
 
 namespace ProloAPI
 {
@@ -21,9 +26,20 @@ namespace ProloAPI
 		public int Version { get => -1; }
 		public string[] DataKeys { get => new string[] { }; }
 		public enum LoadDataType : int { }
+		public IFormatterResolver FormatterResolver { get; }
 
 		public BaseSaveLoadManager()
 		{
+#if IL2CPP
+
+			FormatterResolver =	CompositeResolver.Create(
+				UnityResolver.Instance.Cast<IFormatterResolver>(),
+				StandardResolver.Instance.Cast<IFormatterResolver>(),
+				BuiltinResolver.Instance.Cast<IFormatterResolver>(),
+				//default resolver
+				ContractlessStandardResolver.Instance.Cast<IFormatterResolver>());
+
+#else
 			CompositeResolver.Register(
 				UnityResolver.Instance,
 				StandardResolver.Instance,
@@ -31,7 +47,8 @@ namespace ProloAPI
 				//default resolver
 				ContractlessStandardResolver.Instance
 				);
-
+			FormatterResolver = CompositeResolver.Instance;
+#endif
 			Managers.Add(this);
 		}
 
@@ -43,23 +60,37 @@ namespace ProloAPI
 		public static List<BaseSaveLoadManager> Managers { get; } = new List<BaseSaveLoadManager>();
 
 		// Convert an object to a byte array
-		public static byte[] ObjectToByteArray(object obj)
+		public static byte[] ObjectToByteArray<T>(T obj)
 		{
 			BinaryFormatter bf = new BinaryFormatter();
 			using(var ms = new MemoryStream())
 			{
+#if IL2CPP
+				DataContractJsonSerializer data = new DataContractJsonSerializer(typeof(T));
+				data.WriteObject(ms, obj);
+				return ms.ToArray();
+#else
 				bf.Serialize(ms, obj);
 				return ms.ToArray();
+#endif
 			}
 		}
 
-		public static T1 ByteArrayToObject<T1>(byte[] arr)
+		public static T ByteArrayToObject<T>(byte[] arr)
 		{
 			BinaryFormatter bf = new BinaryFormatter();
+			T obj;
 			using(var ms = new MemoryStream())
 			{
 				ms.Write(arr, 0, arr.Length);
-				T1 obj = (T1)bf.Deserialize(ms);
+
+#if IL2CPP
+				DataContractJsonSerializer data = new DataContractJsonSerializer(typeof(T));
+				obj = (T)data.ReadObject(ms);
+#else
+				obj = (T)bf.Deserialize(ms);
+#endif
+
 				return obj;
 			}
 		}

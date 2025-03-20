@@ -9,11 +9,11 @@ using BepInEx.Logging;
 using ProloAPI.Extensions;
 
 using UnityEngine.Events;
-
-using static Illusion.Utils;
+ 
 
 namespace ProloAPI
 {
+#if !IL2CPP
 	public abstract class ProloBaseUnityPlugin : BaseUnityPlugin
 	{
 		public struct ProloInfo
@@ -56,5 +56,6 @@ namespace ProloAPI
 		public static new ManualLogSource Logger { get; private set; }
 
 	}
+#endif
 
 }

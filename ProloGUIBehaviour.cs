@@ -1,6 +1,9 @@
 ﻿using UnityEngine.Events;
 using UnityEngine;
 
+#if IL2CPP
+using ILLGames.Unity.Component;
+#endif
 public class ProloGUIBehaviour<T> : Singleton<T>
 	where T : MonoBehaviour
 {
