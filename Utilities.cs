@@ -249,7 +249,7 @@ namespace ProloAPI
 
 #if !IL2CPP
 
-        internal class MorphTarget<T> where T : CharaCustomFunctionController
+        internal class DummyChara<T> where T : CharaCustomFunctionController
         {
             private static ChaControl _extraCharacter = null;
 
