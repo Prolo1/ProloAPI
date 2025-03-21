@@ -248,7 +248,8 @@ namespace ProloAPI
         }
 
 #if !IL2CPP
-
+        //t = knife
+        //t = boot
         internal class DummyChara<T> where T : CharaCustomFunctionController
         {
             private static ChaControl _extraCharacter = null;
@@ -275,7 +276,7 @@ namespace ProloAPI
 #if HONEY_API
 							Character.Instance.CreateChara(1, parent?.gameObject, -10);
 #elif KK
-                                Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
+                            Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #elif KKS
 							Character.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #endif
@@ -284,7 +285,7 @@ namespace ProloAPI
 
                             //remove character from internal list
 #if KKS
-						Character.DeleteChara(_extraCharacter, entryOnly: true);
+							Character.DeleteChara(_extraCharacter, entryOnly: true);
 #else
                             Character.Instance?.DeleteChara(_extraCharacter, entryOnly: true);
 #endif
@@ -304,27 +305,36 @@ namespace ProloAPI
                                 GameObject.Destroy(ctrler);//change back to Destroy if issues arise
                             }
 
-                            _extraCharacter.gameObject.SetActive(false);
+                            _extraCharacter?.gameObject.SetActive(false);
                             if(Debug) ProloLogger.LogDebug("created new Morph character instance");
                         }
+
+                        postInitAct?.Invoke(value);
 
                         return;
                     }
 
+                    //Reset the character when initialize is set to false
 
                     //if(_bonectrl) _bonectrl.hideFlags = HideFlags.None;
                     //if(_bonectrl) GameObject.Destroy(_bonectrl);
+                    postInitAct?.Invoke(value);
                     if(_extraCharacter) GameObject.Destroy(_extraCharacter?.gameObject);
-
                     _extraCharacter = null;
                 }
                 get { return _extraCharacter != null; }
             }
 
+            /// <summary>
+            /// Action to be performed after the character is initialized or destroyed.
+			/// bool: true if character is initialized, false if character is destroyed
+            /// </summary>
+            public static Action<bool> postInitAct = null;
             public static ChaControl extraCharacter { get => _extraCharacter; }
 
             public static ChaFileControl chaFile { get => extraCharacter?.chaFile; }
         }
+
 #endif
 
         public class PGUI
