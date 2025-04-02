@@ -145,7 +145,7 @@ namespace ProloAPI
                 get
                 {
                     if(_greyTex != null) return _greyTex;
-                    return _greyTex = ColourTexture(Color.black);
+                    return _greyTex = CreateColourTexture(Color.black);
                 }
             }
 
@@ -154,7 +154,7 @@ namespace ProloAPI
             /// </summary>
             /// <param name="colour"></param>
             /// <returns></returns>
-            public static Texture2D ColourTexture(Color colour)
+            public static Texture2D CreateColourTexture(Color colour)
             {
                 Texture2D tex = new Texture2D(1, 1);
                 var pixels = tex.GetPixels();
@@ -250,80 +250,82 @@ namespace ProloAPI
 #if !IL2CPP
         //t = knife
         //t = boot
-        internal class DummyChara<T> where T : CharaCustomFunctionController
+        internal static class DummyChara<T> where T : CharaCustomFunctionController
         {
             private static ChaControl _extraCharacter = null;
 
 
-            /// <summary>
-            /// true: creates a new instance if one is not created. false: destroys the current instance
-            /// </summary>
-            public static bool initialize
-            {
-                set
-                {
+			/// <summary>
+			/// true: creates a new instance if one is not created. false: destroys the current instance
+			/// </summary>
+			public static bool Initialize
+			{
+				set
+				{
+					if(Debug) ProloLogger.LogDebug($"Initializing DummyChara: {value}");
+
                     if(value)
-                    {
-                        if(_extraCharacter == null)
-                        {
+					{
+						if(_extraCharacter == null)
+						{
 
-                            Transform parent = null;
-                            parent = GetAllChaFuncCtrlOfType<T>()?.First()?.transform.parent;
-                            //_extraCharacter = new ChaControl();
+							Transform parent = null;
+							parent = GetAllChaFuncCtrlOfType<T>()?.First()?.transform.parent;
+							//_extraCharacter = new ChaControl();
 
-                            _extraCharacter =
+							_extraCharacter =
 
 #if HONEY_API
 							Character.Instance.CreateChara(1, parent?.gameObject, -10);
 #elif KK
-                            Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
+							Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #elif KKS
 							Character.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #endif
 
-                            if(!(_extraCharacter?.gameObject)) { _extraCharacter = null; return; }
+							if(!(_extraCharacter?.gameObject)) { _extraCharacter = null; return; }
 
-                            //remove character from internal list
+							//remove character from internal list
 #if KKS
 							Character.DeleteChara(_extraCharacter, entryOnly: true);
 #else
-                            Character.Instance?.DeleteChara(_extraCharacter, entryOnly: true);
+							Character.Instance?.DeleteChara(_extraCharacter, entryOnly: true);
 #endif
 
-                            //BoneController _bonectrl = null;
-                            //if(ABMXDependency.IsInTargetVersionRange)
-                            //    _bonectrl = _extraCharacter?.GetComponent<BoneController>();
+							//BoneController _bonectrl = null;
+							//if(ABMXDependency.IsInTargetVersionRange)
+							//    _bonectrl = _extraCharacter?.GetComponent<BoneController>();
 
-                            //This is needed so extracharacter is not immediately destroyed
-                            var ctrler = _extraCharacter?.GetComponent<T>();
-                            if(ctrler)
-                            {
+							//This is needed so extracharacter is not immediately destroyed
+							var ctrler = _extraCharacter?.GetComponent<T>();
+							if(ctrler)
+							{
 
-                                if(Debug) ProloLogger.LogDebug("Destroying dummy chara controller");
+								if(Debug) ProloLogger.LogDebug("Destroying dummy chara controller");
 
-                                ctrler.enabled = false;
-                                GameObject.Destroy(ctrler);//change back to Destroy if issues arise
-                            }
+								ctrler.enabled = false;
+								GameObject.Destroy(ctrler);//change back to Destroy if issues arise
+							}
 
-                            _extraCharacter?.gameObject.SetActive(false);
-                            if(Debug) ProloLogger.LogDebug("created new Morph character instance");
-                        }
+							_extraCharacter?.gameObject.SetActive(false);
+							if(Debug) ProloLogger.LogDebug("created new Morph character instance");
+						}
 
-                        postInitAct?.Invoke(value);
+						postInitAct?.Invoke(value);
 
-                        return;
-                    }
+						return;
+					}
 
-                    //Reset the character when initialize is set to false
+					//Reset the character when initialize is set to false
 
-                    //if(_bonectrl) _bonectrl.hideFlags = HideFlags.None;
-                    //if(_bonectrl) GameObject.Destroy(_bonectrl);
-                    postInitAct?.Invoke(value);
-                    if(_extraCharacter) GameObject.Destroy(_extraCharacter?.gameObject);
-                    _extraCharacter = null;
-                }
-                get { return _extraCharacter != null; }
-            }
+					//if(_bonectrl) _bonectrl.hideFlags = HideFlags.None;
+					//if(_bonectrl) GameObject.Destroy(_bonectrl);
+					postInitAct?.Invoke(value);
+					if(_extraCharacter) GameObject.Destroy(_extraCharacter?.gameObject);
+					_extraCharacter = null;
+				}
+				get { return _extraCharacter != null; }
+			} 
 
             /// <summary>
             /// Action to be performed after the character is initialized or destroyed.
@@ -533,7 +535,7 @@ namespace ProloAPI
                 {
                     if(tmpSty == null)
                     {
-                        var tex = ColourTexture(new Color(0, 0, 0, .5f));
+                        var tex = CreateColourTexture(new Color(0, 0, 0, .5f));
 
                         tmpSty = new GUIStyle(GUI.skin.label)
                         {

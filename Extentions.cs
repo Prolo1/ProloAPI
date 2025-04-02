@@ -536,7 +536,7 @@ namespace ProloAPI
             /// <returns>An Texture2D created from path if passed, else a black texture</returns>
             public static Texture2D CreateTexture(this string path, byte[] data = null)
             {
-                Texture2D texture = ColourTexture(Color.black);
+                Texture2D texture = CreateColourTexture(Color.black);
                 if(!data.IsNullOrEmpty() || !File.Exists(path))
                     texture.LoadImage(data);
                 else
@@ -766,7 +766,8 @@ namespace ProloAPI
                                 //		Logger.LogInfo($"\nConstraint: {winRec}\nRect info: {ymp}\nTooltip: {tooltip}");
                             }
                         }
-                    };
+                    }
+                    ;
                     OnUIEnter(gui.ControlObject, (UnityAction)(() =>
                     {
                         act1 = () => act2(msg, getContainerRect(gui), enable?.Invoke() ?? true);
@@ -1002,7 +1003,8 @@ namespace ProloAPI
                     layout.childAlignment = TextAnchor.MiddleCenter;
 
                     par?.ScaleToParent2D();
-                };
+                }
+                ;
 
 
                 //Add layout elements to control object children
@@ -1207,21 +1209,43 @@ namespace ProloAPI
 #if !IL2CPP
         public static class PGame
         {
-            public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
-            public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
+            //public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+            //public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
+            //{
+            //    if(Debug) ProloLogger.LogInfo($"Name of save: {typeof(Tmng).Name}");
+            //    pre?.Invoke();
+            //    var tmp = (Tdata)GetSaveLoadManager<Tmng>().Save(ctrl, data);
+            //    post?.Invoke();
+            //    return tmp;
+            //}
+            //public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+            //public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
+            //{
+            //    if(Debug) ProloLogger.LogInfo($"Name of load: {typeof(Tmng).Name}");
+            //    pre?.Invoke();
+            //    var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Load(ctrl, data);
+            //    if(tmp == null) ProloLogger.LogWarning($"value returned null");
+            //    post?.Invoke();
+            //    return tmp;
+            //}
+
+            public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, PluginData> => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+            public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, Tdata> where Tdata : class
             {
                 if(Debug) ProloLogger.LogInfo($"Name of save: {typeof(Tmng).Name}");
                 pre?.Invoke();
-                var tmp = (Tdata)GetSaveLoadManager<Tmng>().Save(ctrl, data);
+                var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Save(ctrl, data);
+                if(tmp == null) ProloLogger.LogWarning($"value returned null");
                 post?.Invoke();
                 return tmp;
             }
-            public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
-            public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : BaseSaveLoadManager where Tdata : class
+            public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, PluginData> => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
+            public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, Tdata> where Tdata : class
             {
                 if(Debug) ProloLogger.LogInfo($"Name of load: {typeof(Tmng).Name}");
                 pre?.Invoke();
-                var tmp = (Tdata)GetSaveLoadManager<Tmng>().Load(ctrl, data);
+                var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Load(ctrl, data);
+                if(tmp == null) ProloLogger.LogWarning($"value returned null");
                 post?.Invoke();
                 return tmp;
             }
