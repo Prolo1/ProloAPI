@@ -279,6 +279,17 @@ namespace ProloAPI
 
         public static class PGeneral
         {
+       /// <summary>
+       /// Links the debug value with specified config entry. 
+       /// Editing Prolo debug variable will not change the ConfigEntry<bool>
+       /// </summary>
+       /// <param name="entry"></param>
+            public static ConfigEntry<bool> DebugLink(this ConfigEntry<bool> entry) {
+                //enable ProloAPI Debug Link
+                Debug = entry.Value;
+                entry.SettingChanged += (m, n) => Debug =entry.Value;
+                return entry;
+            }
 
             /// <summary>
             /// Checks if the contents of a string is a near match for a pattern.
@@ -311,6 +322,18 @@ namespace ProloAPI
             {
                 list.Add(val);
                 return list.Last();
+            }
+            /// <summary>
+            /// Adds a value to the end of a list and returns it
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="list"></param>
+            /// <param name="val"></param>
+            /// <returns></returns>
+            public static ICollection<T> AddNReturnRange<T>(this ICollection<T> list, IEnumerable<T> val)
+            {
+                list.Concat(val);
+                return list ;
             }
 #if AI
 			/// <summary>
