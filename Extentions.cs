@@ -337,17 +337,17 @@ namespace ProloAPI
                 return list;
             }
 #if AI
-			/// <summary>
-			/// Determines weather two sequences are equal by using the default equality comparer of its type
-			/// </summary>
-			/// <typeparam name="T"></typeparam>
-			/// <typeparam name="TComp"></typeparam>
-			/// <param name="first"></param>
-			/// <param name="second"></param>
-			/// <param name="compKeySelect"></param>
-			/// <returns></returns>
-			public static bool SequenceEqual<T, TComp>(this IEnumerable<T> first, IEnumerable<T> second, Func<T, TComp> compKeySelect)
-				 => first.Select(compKeySelect).SequenceEqual(second.Select(compKeySelect));
+            /// <summary>
+            /// Determines weather two sequences are equal by using the default equality comparer of its type
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <typeparam name="TComp"></typeparam>
+            /// <param name="first"></param>
+            /// <param name="second"></param>
+            /// <param name="compKeySelect"></param>
+            /// <returns></returns>
+            public static bool SequenceEqual<T, TComp>(this IEnumerable<T> first, IEnumerable<T> second, Func<T, TComp> compKeySelect)
+                 => first.Select(compKeySelect).SequenceEqual(second.Select(compKeySelect));
 #elif IL2CPP
 			/// <summary>
 			/// 

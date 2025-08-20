@@ -17,11 +17,21 @@ using System.Runtime.Serialization.Json;
 
 namespace ProloAPI
 {
+    public interface ISaveLoadManager : IDisposable
+    {
+        int Version { get; }
+        string[] DataKeys { get; }
+        object Load(object ctrler, object data);
+        object Save(object ctrler, object data);
+        object UpdateVersionFromPrev(object ctrler, object data);
+
+    }
+
     /// <summary>
     /// saves controls from current data. 
     /// Note: make a new one if variables change
     /// </summary>  
-    public abstract class BaseSaveLoadManager : IDisposable
+    public abstract class BaseSaveLoadManager : ISaveLoadManager
     {
         public int Version { get => -1; }
         public string[] DataKeys { get => new string[] { }; }
@@ -57,7 +67,7 @@ namespace ProloAPI
             Dispose();
         }
 
-        public static List<BaseSaveLoadManager> Managers { get; } = new List<BaseSaveLoadManager>();
+        public static List<ISaveLoadManager> Managers { get; } = new List<ISaveLoadManager>();
 
         // Convert an object to a byte array
         public static byte[] ObjectToByteArray<T>(T obj)
@@ -95,11 +105,11 @@ namespace ProloAPI
             }
         }
 
-        public virtual object Load(object ctrler, object data = null) => throw new NotImplementedException();
+        public virtual object Load(object ctrler, object data) => throw new NotImplementedException();
 
-        public virtual object Save(object ctrler, object data = null) => throw new NotImplementedException();
+        public virtual object Save(object ctrler, object data) => throw new NotImplementedException();
 
-        protected virtual object UpdateVersionFromPrev(object ctrler, object data) => throw new NotImplementedException();
+        public virtual object UpdateVersionFromPrev(object ctrler, object data) => throw new NotImplementedException();
 
         public void Dispose()
         {
@@ -118,6 +128,20 @@ namespace ProloAPI
 
         public virtual TData Save(TCtrler ctrler, TData data = null) => (TData)base.Save(ctrler, data);
 
+        #region Restricted Overrides
+        /// <summary>
+        /// DO NOT OVERRIDE THIS. USE <see cref="UpdateVersionFromPrev(TCtrler, TData)"/> INSTEAD
+        /// </summary>        
+        public override object UpdateVersionFromPrev(object ctrler, object data) => UpdateVersionFromPrev((TCtrler)ctrler, (TData)data);
+        /// <summary>
+        /// DO NOT OVERRIDE THIS. USE <see cref="Load(TCtrler, TData)"/> INSTEAD
+        /// </summary>        
+        public override object Load(object ctrler, object data) => Load((TCtrler)ctrler, (TData)data);
+        /// <summary>
+        /// DO NOT OVERRIDE THIS. USE <see cref="Save(TCtrler, TData)"/> INSTEAD
+        /// </summary>         
+        public override object Save(object ctrler, object data) => Save((TCtrler)ctrler, (TData)data);
+        #endregion
     }
 
 }
