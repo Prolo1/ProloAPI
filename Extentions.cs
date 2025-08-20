@@ -279,15 +279,16 @@ namespace ProloAPI
 
         public static class PGeneral
         {
-       /// <summary>
-       /// Links the debug value with specified config entry. 
-       /// Editing Prolo debug variable will not change the ConfigEntry<bool>
-       /// </summary>
-       /// <param name="entry"></param>
-            public static ConfigEntry<bool> DebugLink(this ConfigEntry<bool> entry) {
+            /// <summary>
+            /// Links the debug value with specified config entry. 
+            /// Editing Prolo debug variable will not change the ConfigEntry<bool>
+            /// </summary>
+            /// <param name="entry"></param>
+            public static ConfigEntry<bool> DebugLink(this ConfigEntry<bool> entry)
+            {
                 //enable ProloAPI Debug Link
                 Debug = entry.Value;
-                entry.SettingChanged += (m, n) => Debug =entry.Value;
+                entry.SettingChanged += (m, n) => Debug = entry.Value;
                 return entry;
             }
 
@@ -333,7 +334,7 @@ namespace ProloAPI
             public static ICollection<T> AddNReturnRange<T>(this ICollection<T> list, IEnumerable<T> val)
             {
                 list.Concat(val);
-                return list ;
+                return list;
             }
 #if AI
 			/// <summary>
@@ -465,7 +466,7 @@ namespace ProloAPI
                         continue;
                     }
 
-                    string[] array2 = text.Split(new char[1] { '=' }, 2);
+                    string[] array2 = text.Split(new char[] { '=' }, 2);
                     if(sec == section || sec == null || sec == "")
                         if(array2.Length == 2)
                         {
@@ -889,14 +890,14 @@ namespace ProloAPI
 
                 //	newVertLine = horizontal ? newVertLine : true;
 #if HONEY_API
-				if(gui is MakerText)
-				{
-					var piv = (Vector2)ctrlObj?
-						.GetComponentInChildren<Text>()?
-						.rectTransform.pivot;
-					piv.x = -.5f;
-					piv.y = 1f;
-				}
+                if(gui is MakerText)
+                {
+                    var piv = (Vector2)ctrlObj?
+                        .GetComponentInChildren<Text>()?
+                        .rectTransform.pivot;
+                    piv.x = -.5f;
+                    piv.y = 1f;
+                }
 #endif
 
 
@@ -913,7 +914,7 @@ namespace ProloAPI
                 var vlg = scrollRect.gameObject.GetOrAddComponent<VerticalLayoutGroup>();
 
 #if HONEY_API
-				vlg.childAlignment = TextAnchor.UpperLeft;
+                vlg.childAlignment = TextAnchor.UpperLeft;
 #else
                 vlg.childAlignment = TextAnchor.UpperCenter;
 #endif
@@ -939,8 +940,8 @@ namespace ProloAPI
                     img = scrollRect.viewport.GetComponent<Image>();
                 img.enabled = false;
 #elif HONEY_API
-				//		scrollRect.GetComponent<RectTransform>().sizeDelta =
-				//		  scrollRect.transform.parent.GetComponentInChildren<Image>().rectTransform.sizeDelta;
+                //		scrollRect.GetComponent<RectTransform>().sizeDelta =
+                //		  scrollRect.transform.parent.GetComponentInChildren<Image>().rectTransform.sizeDelta;
 #endif
 
                 //Setup LayoutElements 
@@ -950,7 +951,7 @@ namespace ProloAPI
 
                 var viewLE = scrollRect.viewport.GetOrAddComponent<LayoutElement>();
 #if !KK
-				viewLE.layoutPriority = 1;
+                viewLE.layoutPriority = 1;
 #endif
                 viewLE.minWidth = -1;
                 viewLE.flexibleWidth = -1;
@@ -991,7 +992,7 @@ namespace ProloAPI
                 ele.preferredHeight = Math.Max(ele?.preferredHeight ?? -1, ctrlObj.GetOrAddComponent<LayoutElement>()?.minHeight ?? ele?.preferredHeight ?? -1);
                 ele.preferredWidth =
 #if HONEY_API
-				scrollRect.GetComponent<RectTransform>().rect.width;
+                scrollRect.GetComponent<RectTransform>().rect.width;
 #else
                 //viewLE.minWidth;
                 0;
@@ -1082,7 +1083,7 @@ namespace ProloAPI
                 //	GameObject.Destroy(ctrlObj.GetComponent<LayoutElement>());
                 var thisLE = ctrlObj.GetOrAddComponent<LayoutElement>();
 #if !KK
-				thisLE.layoutPriority = 5;
+                thisLE.layoutPriority = 5;
 #endif
                 thisLE.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
                 bool check = thisLE.transform.childCount > 1 &&
@@ -1113,7 +1114,7 @@ namespace ProloAPI
 
                 thisLE.preferredWidth =
 #if HONEY_API
-					  pWidth > 0 ? scrollRect.rectTransform.rect.width * pWidth : -1;
+                      pWidth > 0 ? scrollRect.rectTransform.rect.width * pWidth : -1;
 #else
             //	 pWidth > 0 ? scrollRect.rectTransform.rect.width * pWidth : -1;
             0;
@@ -1258,7 +1259,7 @@ namespace ProloAPI
                 if(Debug) ProloLogger.LogInfo($"Name of save: {typeof(Tmng).Name}");
                 pre?.Invoke();
                 var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Save(ctrl, data);
-                if(tmp == null) ProloLogger.LogWarning($"value returned null");
+                if(tmp == null) ProloLogger.LogWarning($"SaveLoadManager value returned null");
                 post?.Invoke();
                 return tmp;
             }
@@ -1268,7 +1269,7 @@ namespace ProloAPI
                 if(Debug) ProloLogger.LogInfo($"Name of load: {typeof(Tmng).Name}");
                 pre?.Invoke();
                 var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Load(ctrl, data);
-                if(tmp == null) ProloLogger.LogWarning($"value returned null");
+                if(tmp == null) ProloLogger.LogWarning($"SaveLoadManager value returned null");
                 post?.Invoke();
                 return tmp;
             }

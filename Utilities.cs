@@ -33,7 +33,7 @@ namespace ProloAPI
 
     namespace Utilities
     {
-        
+
 #if !IL2CPP
 
 
@@ -52,7 +52,7 @@ namespace ProloAPI
             private static BaseSaveLoadManager _saveLoad = null;
 
             internal static readonly ManualLogSource ProloLogger = BepInEx.Logging.Logger.CreateLogSource("Prolo Logger");
-			
+
 #if !IL2CPP
             /// <summary>
             /// force the extra data of a character coordinate to load again
@@ -187,9 +187,10 @@ namespace ProloAPI
             {
                 /**This stuff will be used later*/
                 //Logger.LogDebug($"\nResources:\n[{string.Join(", ", resources)}]");
+                var namel = name.ToLower();
                 ass = ass ?? Assembly.GetExecutingAssembly();
                 res = res ?? ass.GetManifestResourceNames();
-                var data = ass.GetManifestResourceStream(res.FirstOrDefault((txt) => (txt.ToLower()).Contains(name)) ?? " ");
+                var data = ass.GetManifestResourceStream(res.FirstOrDefault((txt) => (txt.ToLower()).Contains(namel)) ?? " ");
                 mem = mem ?? new MemoryStream();
 #if KK
                 mem.SetLength(0);//Clear Buffer 
@@ -201,14 +202,14 @@ namespace ProloAPI
                 return mem;
             }
 
-            public static GameObject CreateGameObject(string name, Transform parent = null,bool keepWorldPos=false)
+            public static GameObject CreateGameObject(string name, Transform parent = null, bool keepWorldPos = false)
             {
                 var tmp = new GameObject(name);
 
-				tmp.transform.SetParent(parent,keepWorldPos); 
-				tmp.transform.localScale= Vector3.one;
-				tmp.transform.localPosition = Vector3.zero;
-				tmp.transform.localRotation= Quaternion.identity;
+                tmp.transform.SetParent(parent, keepWorldPos);
+                tmp.transform.localScale = Vector3.one;
+                tmp.transform.localPosition = Vector3.zero;
+                tmp.transform.localRotation = Quaternion.identity;
                 return tmp;
             }
 #if IL2CPP
@@ -271,7 +272,7 @@ namespace ProloAPI
 #if HONEY_API
                             Character.Instance.CreateChara(1, parent?.gameObject, -10);
 #elif KK
-							Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
+                            Character.Instance.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #elif KKS
 							Character.CreateFemale(parent?.gameObject, -10, hiPoly: false);
 #endif
@@ -416,27 +417,39 @@ namespace ProloAPI
                 });
             }
 
-            public static Func<int> GUILayoutDropdownDrawer(Func<string[], int, GUIContent> content, string[] items = null, int initSelection = 0, float scrollHeight = 150, Func<string[], string[]> listUpdate = null, Func<int, int> modSelected = null, Func<int, int> onSelect = null, bool vertical = true)
+            /// <summary>
+            /// Creates a dropdown GUI element that allows the user to select an item from a list.
+            /// </summary>
+            /// <param name="content"></param>
+            /// <param name="items"></param>
+            /// <param name="initSelection"></param>
+            /// <param name="scrollHeight"></param>
+            /// <param name="listUpdate">updates the list object. First function called</param>
+            /// <param name="onSelect">do any action based on selection and return the current selected object. Second function called</param>
+            /// <param name="modifySelected">modify the selected object if need be. Called after all other functions</param>
+            /// <param name="vertical"></param>
+            /// <returns></returns>
+            public static Func<int> GUILayoutDropdownDrawerCreator(Func<string[], int, GUIContent> content, string[] items = null, int initSelection = 0, float scrollHeight = 150, Func<string[], string[]> listUpdate = null, Func<int, int> onSelect = null, Func<int, int> modifySelected = null, bool vertical = true)
             {
                 int selectedItem = initSelection;
                 //var select = selectedItem;
                 bool selectingItem = false;
                 Vector2 scrollpos = Vector2.zero;
 
-
                 return new Func<int>(() =>
                 {
-                    void BeginDirection(bool invert = false, params GUILayoutOption[] opt)
+
+                    void BeginDirection(params GUILayoutOption[] opt)
                     {
-                        if(vertical && !invert)
+                        if(vertical)
                             GUILayout.BeginVertical(opt);
                         else
                             GUILayout.BeginHorizontal(opt);
                     }
 
-                    void EndDirection(bool invert = false)
+                    void EndDirection()
                     {
-                        if(vertical && !invert)
+                        if(vertical)
                             GUILayout.EndVertical();
                         else
                             GUILayout.EndHorizontal();
@@ -448,12 +461,10 @@ namespace ProloAPI
                     items = listUpdate?.Invoke(items) ?? items;
 
                     if(!items?.InRange(selectedItem) ?? false)
-                        selectedItem = Math.Max(0, Math.Min
-                        (items.Length - 1, selectedItem));
+                        selectedItem = Mathf.Clamp(selectedItem, 0, items?.Length - 1 ?? 0);
 
                     if(!items?.InRange(selectedItem) ?? true)
                     {
-
                         EndDirection();
                         return -1;
                     }
@@ -468,7 +479,8 @@ namespace ProloAPI
                             var tmpcontent = content?.Invoke(items, selectedItem);
                             if(tmpcontent != null)
                                 tmpcontent.text += selectingItem ? " ▲" : " ▼";//▼▾
-                            if((btn = GUILayout.Button(tmpcontent ?? new GUIContent(selectingItem ? "▲" : "▼"),
+
+                            if((btn = GUILayout.Button(tmpcontent ?? new GUIContent(selectingItem ? " ▲" : " ▼"),
                                  GUILayout.ExpandWidth(vertical), GUILayout.ExpandHeight(!vertical))) || selectingItem)
                             {
                                 selectingItem = !(btn && selectingItem);//if dropdown btn was pressed
@@ -487,9 +499,12 @@ namespace ProloAPI
                                     //GUILayout.ExpandHeight(true)
                                     );
 
-                                recContent.x += (rec.width * .15f * .5f);
-                                recContent.width *= .85f;
-                                var select = GUI.SelectionGrid(recContent, selectedItem, items, 1
+                                float widthPercent = .85f;
+                                float voidPercent = 1 - widthPercent;
+
+                                recContent.width *= widthPercent;
+                                recContent.x += (rec.width * voidPercent * .5f);
+                                var select = GUI.SelectionGrid(recContent, selectedItem, items, xCount: 1
                                   //GUILayout.Height(recView.height),
                                   //GUILayout.ExpandWidth(true),
                                   //GUILayout.ExpandHeight(true)
@@ -504,7 +519,7 @@ namespace ProloAPI
                             }
                         }
 
-                        selectedItem = modSelected?.Invoke(selectedItem) ?? selectedItem;
+                        selectedItem = modifySelected?.Invoke(selectedItem) ?? selectedItem;
 
                         GUILayout.Space(5);
                     }
