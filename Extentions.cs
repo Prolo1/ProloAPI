@@ -18,14 +18,20 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 using TMPro;
+
 using UniRx;
+
 #if IL2CPP
 using ILLGames.Extensions;
 #else
 using UGUI_AssistLibrary;
+
 using KKAPI.Maker.UI;
+
 using ExtensibleSaveFormat;
+
 using KKAPI.Maker;
 using KKAPI.Chara;
 #endif
@@ -46,7 +52,12 @@ using static BepInEx.Logging.LogLevel;
 //using UGUI_AssistLibrary;
 
 using static UnityEngine.GUI;
+
 using System.Runtime.CompilerServices;
+
+using BodyDouble;
+using System.CodeDom;
+using KKAPI.Studio.UI.Toolbars;
 namespace ProloAPI
 {
 
@@ -288,7 +299,12 @@ namespace ProloAPI
             {
                 //enable ProloAPI Debug Link
                 Debug = entry.Value;
-                entry.SettingChanged += (m, n) => Debug = entry.Value;
+
+                void thing (object m,object n) { Debug = entry.Value; }
+
+                entry.SettingChanged -= thing;
+                entry.SettingChanged += thing;
+
                 return entry;
             }
 
@@ -843,6 +859,46 @@ namespace ProloAPI
 
                 return gui;
             }
+            /// <summary>
+            /// Makes sure GUI is initialized before code execution
+            /// </summary>
+            /// <param name="gui"></param>
+            /// <param name="act"></param>
+            /// <returns>Reference to original <typeparamref name="T"/></returns>
+            public static T OnToolbarExists<T>(this T gui, UnityAction<T> act) where T : ToolbarControlBase
+            {
+                if(gui == null) return null;
+
+#if false
+			if(!gui.Exists)
+			{
+				var ob = gui.ObserveEveryValueChanged(p => p.Exists, FrameCountType.EndOfFrame);
+				var sub = ob.Subscribe(val =>
+				{
+					if(!val) return;
+					act(gui);
+				});
+			}
+			else
+			{
+				act(gui);
+			}
+#else
+                GetInstance<ProloBaseUnityPlugin>().StartCoroutine(func(gui, act));
+                IEnumerator func(T gui1, UnityAction<T> act1)
+                {
+                    if(!gui1.ButtonObject)
+                        while(!gui1.ButtonObject)
+                            yield return null;//the thing needs to exist first
+
+                    act1(gui);
+
+                    yield break;
+                }
+#endif
+
+                return gui;
+            }
 
             public static T AddToCustomGUILayout<T>(this T gui, float viewpercent = -1, bool topUI = false, float pWidth = -1, bool newVertLine = true, bool debug = false) where T : BaseGuiEntry
             {
@@ -1253,6 +1309,7 @@ namespace ProloAPI
             //    return tmp;
             //}
 
+
             public static PluginData SaveExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, PluginData> => ctrl.SaveExtData<Tmng, Tctrl, PluginData>(data, pre, post);
             public static Tdata SaveExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, Tdata> where Tdata : class
             {
@@ -1263,6 +1320,7 @@ namespace ProloAPI
                 post?.Invoke();
                 return tmp;
             }
+
             public static PluginData LoadExtData<Tmng, Tctrl>(this Tctrl ctrl, PluginData data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, PluginData> => ctrl.LoadExtData<Tmng, Tctrl, PluginData>(data, pre, post);
             public static Tdata LoadExtData<Tmng, Tctrl, Tdata>(this Tctrl ctrl, Tdata data = default, UnityAction pre = null, UnityAction post = null) where Tmng : SaveLoadManager<Tctrl, Tdata> where Tdata : class
             {

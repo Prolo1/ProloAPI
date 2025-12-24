@@ -17,7 +17,7 @@ using System.Runtime.Serialization.Json;
 
 namespace ProloAPI
 {
-    public interface ISaveLoadManager : IDisposable
+    public interface ISaveLoadManagerBase : IDisposable
     {
         int Version { get; }
         string[] DataKeys { get; }
@@ -26,12 +26,20 @@ namespace ProloAPI
         object UpdateVersionFromPrev(object ctrler, object data);
 
     }
+    public interface ISaveLoadManager<TCtrler, TData> : ISaveLoadManagerBase, IDisposable
+    {
+
+        TData Load(TCtrler ctrler, TData data);
+        TData Save(TCtrler ctrler, TData data);
+        TData UpdateVersionFromPrev(TCtrler ctrler, TData data);
+
+    }
 
     /// <summary>
     /// saves controls from current data. 
     /// Note: make a new one if variables change
     /// </summary>  
-    public abstract class BaseSaveLoadManager : ISaveLoadManager
+    public abstract class BaseSaveLoadManager : ISaveLoadManager<object, object>
     {
         public int Version { get => -1; }
         public string[] DataKeys { get => new string[] { }; }
@@ -67,7 +75,7 @@ namespace ProloAPI
             Dispose();
         }
 
-        public static List<ISaveLoadManager> Managers { get; } = new List<ISaveLoadManager>();
+        public static List<ISaveLoadManagerBase> Managers { get; } = new List<ISaveLoadManagerBase>();
 
         // Convert an object to a byte array
         public static byte[] ObjectToByteArray<T>(T obj)
@@ -117,11 +125,14 @@ namespace ProloAPI
         }
     }
 
-    public abstract class SaveLoadManager<TCtrler, TData> : BaseSaveLoadManager where TData : class
+    public abstract class SaveLoadManager<TCtrler, TData> : BaseSaveLoadManager, ISaveLoadManager<TCtrler, TData> where TData : class
     {
+
+
         public new int Version => base.Version;
         public new string[] DataKeys => base.DataKeys;
 
+        TData ISaveLoadManager<TCtrler, TData>.UpdateVersionFromPrev(TCtrler ctrler, TData data) => UpdateVersionFromPrev(ctrler, data);
         protected virtual TData UpdateVersionFromPrev(TCtrler ctrler, TData data) => (TData)base.UpdateVersionFromPrev(ctrler, data);
 
         public virtual TData Load(TCtrler ctrler, TData data = null) => (TData)base.Load(ctrler, data);
@@ -141,6 +152,7 @@ namespace ProloAPI
         /// DO NOT OVERRIDE THIS. USE <see cref="Save(TCtrler, TData)"/> INSTEAD
         /// </summary>         
         public override object Save(object ctrler, object data) => Save((TCtrler)ctrler, (TData)data);
+
         #endregion
     }
 

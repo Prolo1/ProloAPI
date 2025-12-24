@@ -49,7 +49,7 @@ namespace ProloAPI
         public class PGeneral
         {
             public static bool Debug { get; set; } = false;
-            private static BaseSaveLoadManager _saveLoad = null;
+            private static List<BaseSaveLoadManager> _saveLoad = new List<BaseSaveLoadManager>();
 
             internal static readonly ManualLogSource ProloLogger = BepInEx.Logging.Logger.CreateLogSource("Prolo Logger");
 
@@ -109,10 +109,10 @@ namespace ProloAPI
 #endif
             public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
             {
-                if(_saveLoad == null || !(_saveLoad is Tmng))
-                    _saveLoad = (Tmng)Activator.CreateInstance(typeof(Tmng));
+                if(_saveLoad.Exists((mng) => mng is Tmng))
+                    _saveLoad.Add((Tmng)Activator.CreateInstance(typeof(Tmng)));
 
-                return (Tmng)_saveLoad;
+                return (Tmng)_saveLoad.Find((mng) => mng is Tmng);
             }
 
             /// <summary>
