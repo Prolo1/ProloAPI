@@ -38,7 +38,7 @@ namespace ProloAPI
         public ProloBaseUnityPlugin Instance { get; }
         public new ManualLogSource Logger { get => base.Logger; }
 
-        public static HashSet<ProloBaseUnityPlugin> Instances { get; } = new List<ProloBaseUnityPlugin>();
+        public static HashSet<ProloBaseUnityPlugin> Instances { get; } = new HashSet<ProloBaseUnityPlugin>();
 
     }
 

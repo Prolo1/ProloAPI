@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using UnityEngine;
+
 using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Configuration;
@@ -38,10 +39,13 @@ namespace ProloAPI
 
 
         using KKAPI;
-
+        using KKAPI.Maker;
+        using KKAPI.Maker.UI;
         using KKAPI.Utilities;
 
         using Manager;
+
+        using UnityEngine.UI;
 #endif
 
         using static PGeneral;
@@ -335,6 +339,41 @@ namespace ProloAPI
 
         public class PGUI
         {
+            public static Action<ConfigEntryBase> CustomRectDrawer()
+            {
+                return new Action<ConfigEntryBase>(draw =>
+                {
+                    if(!(draw is ConfigEntry<Rect>)) return;
+
+                    Rect tmp = new Rect((Rect)draw.BoxedValue);
+                    GUILayout.BeginHorizontal();
+                                        
+
+                    GUILayout.Label("X", GUILayout.ExpandWidth(false));
+                    //tmp.x = GUILayout.HorizontalSlider(tmp.x, 0, Screen.width, GUILayout.ExpandWidth(true));
+                    float.TryParse(GUILayout.TextField(string.Format("{0:f0}", tmp.x)), out var x);
+
+                    GUILayout.Label("Y", GUILayout.ExpandWidth(false));
+                    //tmp.y = GUILayout.HorizontalSlider(tmp.y, 0, Screen.height, GUILayout.ExpandWidth(true));
+                    float.TryParse(GUILayout.TextField(string.Format("{0:f0}", tmp.y)), out var y);
+
+                    GUILayout.Label("Width", GUILayout.ExpandWidth(false));
+                    //tmp.width = GUILayout.HorizontalSlider(tmp.width, 0, Screen.width, GUILayout.ExpandWidth(true));
+                    float.TryParse(GUILayout.TextField(string.Format("{0:f0}", tmp.width)), out var w);
+
+                    GUILayout.Label("Height", GUILayout.ExpandWidth(false));
+                    //tmp.height = GUILayout.HorizontalSlider(tmp.height, 0, Screen.height, GUILayout.ExpandWidth(true));
+                    float.TryParse(GUILayout.TextField(string.Format("{0:f0}", tmp.height)), out var h);
+
+                    tmp.Set(x, y, w, h);
+
+                    GUILayout.EndHorizontal();
+
+                    if((Rect)draw.BoxedValue != tmp)
+                        draw.BoxedValue = tmp;
+                });
+            }
+
             public static Action<ConfigEntryBase> ButtonDrawer(string name = null, string tip = null, Action onClick = null, bool vertical = true)
             {
                 return new Action<ConfigEntryBase>((cfgEntry) =>
@@ -579,6 +618,59 @@ namespace ProloAPI
 
             }
 
+
+
+            #region User UI Objects
+            public class MyMakerText : MakerText
+            {
+                public MyMakerText(string text, MakerCategory category, BaseUnityPlugin owner)
+                    : base(text, category, owner)
+                {
+                    this.OnGUIExists(gui => { });
+                }
+
+                new public Color TextColor
+                {
+                    get => ((Graphic)ControlObject.GetTextComponentInChildren()).color;
+                    set
+                    {
+                        var val = ((Graphic)ControlObject.GetTextComponentInChildren());
+                        val.color = value;
+                        val.SetAllDirty();
+                    }
+                }
+            }
+
+            public class MyMakerButton : MakerButton
+            {
+                public MyMakerButton(string text, MakerCategory category, BaseUnityPlugin owner) : base(text, category, owner)
+                {
+                }
+
+                public Color ButtonColor
+                {
+                    get => ControlObject.GetComponentInChildren<Button>().targetGraphic.color;
+                    set
+                    {
+                        var val = ControlObject.GetComponentInChildren<Button>().targetGraphic;
+                        val.color = value;
+                        val.SetAllDirty();
+                    }
+                }
+                new public Color TextColor
+                {
+                    get => ((Graphic)ControlObject.GetTextComponentInChildren()).color;
+                    set
+                    {
+                        var val = ((Graphic)ControlObject.GetTextComponentInChildren());
+                        val.color = value;
+                        val.SetAllDirty();
+                    }
+                }
+            }
+
+
+            #endregion
         }
 #if IL2CPP
 

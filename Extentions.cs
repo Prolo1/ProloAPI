@@ -56,8 +56,12 @@ using static UnityEngine.GUI;
 using System.Runtime.CompilerServices;
 
 using BodyDouble;
+
 using System.CodeDom;
+
 using KKAPI.Studio.UI.Toolbars;
+
+using Illusion.Game;
 namespace ProloAPI
 {
 
@@ -300,7 +304,7 @@ namespace ProloAPI
                 //enable ProloAPI Debug Link
                 Debug = entry.Value;
 
-                void thing (object m,object n) { Debug = entry.Value; }
+                void thing(object m, object n) { Debug = entry.Value; }
 
                 entry.SettingChanged -= thing;
                 entry.SettingChanged += thing;
@@ -752,7 +756,15 @@ namespace ProloAPI
             public static int HierarchyLevelIndex(this Transform obj) => obj.parent ? obj.parent.HierarchyLevelIndex() + 1 : 0;
             public static int HierarchyLevelIndex(this GameObject obj) => obj.transform.HierarchyLevelIndex();
 
+            public static Color RGBMultipliedExt(this Color col, float mult) =>
+                new Color(col.r * mult, col.g * mult, col.b * mult, col.a);
+            public static Color RGBMultipliedExt(this Color col, Color mult) =>
+                new Color(col.r * mult.r, col.g * mult.g, col.b * mult.b, col.a);
 
+            public static Color AlphaMultipliedExt(this Color col, float mult) =>
+                new Color(col.r, col.g, col.b, col.a * mult);
+            public static Color AlphaMultipliedExt(this Color col, Color mult) =>
+                new Color(col.r, col.g, col.b, col.a * mult.a);
         }
 
         public static class PGUI
@@ -760,36 +772,37 @@ namespace ProloAPI
 #if !IL2CPP
             static GUIStyle tmpSty = null;
             public static B tooltipMsg<T, B>(this B gui, string msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour where B : BaseGuiEntry
+                => gui.tooltipMsg(() => msg, GUIobj, enable);
+            public static B tooltipMsg<T, B>(this B gui, Func<string> msg, ProloGUIBehaviour<T> GUIobj, Func<bool> enable = null) where T : MonoBehaviour where B : BaseGuiEntry
             {
                 gui.OnGUIExists(_ =>
                 {
                     var trans = gui.ControlObject.transform;
                     var obj = trans.GetChild(trans.childCount - 1);
                     UnityAction act1 = null;
-                    void act2(string tooltip, Rect winRec, bool enableTip)
+                    void act2(Func<string> tooltip, Rect winRec, bool enableTip)
                     {
-                        if(MakerAPI.InsideAndLoaded && enableTip && !tooltip.IsNullOrEmpty())
+                        var tipmsg = tooltip();
+                        if(MakerAPI.InsideAndLoaded && enableTip && !tipmsg.IsNullOrEmpty())
                         {
                             if(tmpSty == null)
                             {
-                                var tex = new Texture2D(1, 1);
-                                tex.SetPixel(0, 0, new Color(0, 0, 0, .5f));
-                                tex.Apply();
+                                var tex = CreateColourTexture(new Color(0, 0, 0, .8f));
 
                                 tmpSty = new GUIStyle(skin.label)
                                 {
-                                    normal = new GUIStyleState
-                                    {
-                                        textColor = Color.cyan,
-                                        background = tex
-                                    },
+
                                     wordWrap = true,
                                     alignment = TextAnchor.MiddleCenter,
                                 };
+                                //tmpSty.normal.background = tex;
+                                tmpSty.normal.textColor = Color.cyan;
+
+                                tmpSty.hover = tmpSty.active = tmpSty.focused = tmpSty.normal;
                             }
 
                             tmpSty.fontSize = 16;
-                            var content = GUIContent.Temp(tooltip);
+                            var content = GUIContent.Temp(tipmsg);
                             var size = new Vector2(winRec.width * .5f, tmpSty.CalcHeight(content, winRec.width * .5f) + 10);
                             var pos = Event.current.mousePosition;
                             pos -= new Vector2(size.x * .5f, size.y + 10);//Copy vector 
@@ -798,19 +811,20 @@ namespace ProloAPI
                             pos.y = (pos.y < winRec.yMin ? winRec.yMin : pos.y);
 
                             var ymp = new Rect(pos, size);
-                            if(tooltip != null)
+                            if(tipmsg != null)
                             {
 
 
-                                Label(ymp, tooltip, (GUIStyle)tmpSty);
+                                Label(ymp, tipmsg, (GUIStyle)tmpSty);
                                 //		Logger.LogInfo($"\nConstraint: {winRec}\nRect info: {ymp}\nTooltip: {tooltip}");
                             }
                         }
                     }
-                    ;
+
                     OnUIEnter(gui.ControlObject, (UnityAction)(() =>
                     {
                         act1 = () => act2(msg, getContainerRect(gui), enable?.Invoke() ?? true);
+
                         GUIobj.guiEvent.AddListener(act1);
                     }));
                     OnUIExit(gui.ControlObject, (UnityAction)(() => GUIobj.guiEvent.RemoveListener(act1)));
@@ -1192,8 +1206,9 @@ namespace ProloAPI
 
             static Rect getContainerRect(BaseGuiEntry gui)
             {
-                Rect tmp = new Rect(gui.ControlObject.GetComponentInParent<ScrollRect>().rectTransform.rect);
-                tmp.position = gui.ControlObject.GetComponentInParent<ScrollRect>().rectTransform.position;
+                var rt = gui.ControlObject.GetComponentInParent<ScrollRect>().GetComponent<RectTransform>();
+                Rect tmp = new Rect(rt.rect);
+                tmp.position = rt.position;
                 tmp.y = Screen.height - (tmp.yMax);
 
                 return tmp;
@@ -1244,42 +1259,42 @@ namespace ProloAPI
             public static void ResizeCustomUIViewport<T>(this T template, float UISpacePercent) where T : BaseGuiEntry
             {
 
-                if(template != null)
-                    template.OnGUIExists((gui) =>
+                template?.OnGUIExists((gui) =>
+                {
+                    IEnumerator func()
                     {
-                        IEnumerator func()
-                        {
-                            if(Debug) ProloLogger.LogDebug("Started reseizing UI");
+                        if(Debug) ProloLogger.LogDebug("Started reseizing UI");
 
-                            var ctrlObj = gui.ControlObject;
+                        var ctrlObj = gui.ControlObject;
 
-                            if(ctrlObj == null) yield break;
+                        if(ctrlObj == null) yield break;
 
-                            if(!ctrlObj.GetComponentInParent<ScrollRect>())
-                                yield return new WaitUntil(() =>
-                                ctrlObj.GetComponentInParent<ScrollRect>() != null);
+                        if(!ctrlObj.GetComponentInParent<ScrollRect>())
+                            yield return new WaitUntil(() =>
+                            ctrlObj.GetComponentInParent<ScrollRect>() != null);
 
-                            var scrollRect = ctrlObj.GetComponentInParent<ScrollRect>();
+                        var scrollRect = ctrlObj.GetComponentInParent<ScrollRect>();
 
-                            var viewLE = scrollRect.viewport.GetOrAddComponent<LayoutElement>();
-                            float vHeight = Mathf.Abs(scrollRect.rectTransform.rect.height);
+                        var viewLE = scrollRect.viewport.GetOrAddComponent<LayoutElement>();
+                        var rt = scrollRect.GetComponent<RectTransform>();
+                        float vHeight = Mathf.Abs(rt.rect.height);
 
-                            if(Debug) ProloLogger.LogDebug($"vHeight: {vHeight}");
-                            if(Debug) ProloLogger.LogDebug($"UISpacePercent: {UISpacePercent}");
+                        if(Debug) ProloLogger.LogDebug($"vHeight: {vHeight}");
+                        if(Debug) ProloLogger.LogDebug($"UISpacePercent: {UISpacePercent}");
 
-                            viewLE.minHeight =
-                            (UISpacePercent > 0) ? vHeight * UISpacePercent :
-                            (viewLE.minHeight > 0 ? viewLE.minHeight : -1);
+                        viewLE.minHeight =
+                        (UISpacePercent > 0) ? vHeight * UISpacePercent :
+                        (viewLE.minHeight > 0 ? viewLE.minHeight : -1);
 
-                            if(Debug) ProloLogger.LogDebug(viewLE.minHeight);
-                            if(Debug) ProloLogger.LogDebug("Finished reseizing UI");
+                        if(Debug) ProloLogger.LogDebug(viewLE.minHeight);
+                        if(Debug) ProloLogger.LogDebug("Finished reseizing UI");
 
-                            LayoutRebuilder.MarkLayoutForRebuild(scrollRect.rectTransform);
-                        }
+                        LayoutRebuilder.MarkLayoutForRebuild(rt);
+                    }
 
-                        if(resizeco != null) GetInstance<ProloBaseUnityPlugin>().StopCoroutine(resizeco);
-                        resizeco = GetInstance<ProloBaseUnityPlugin>().StartCoroutine(func());
-                    });
+                    if(resizeco != null) GetInstance<ProloBaseUnityPlugin>().StopCoroutine(resizeco);
+                    resizeco = GetInstance<ProloBaseUnityPlugin>().StartCoroutine(func());
+                });
 
             }
 #endif
