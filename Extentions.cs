@@ -1330,8 +1330,13 @@ namespace ProloAPI
             {
                 if(Debug) ProloLogger.LogInfo($"Name of save: {typeof(Tmng).Name}");
                 pre?.Invoke();
-                var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Save(ctrl, data);
-                if(tmp == null) ProloLogger.LogWarning($"SaveLoadManager value returned null");
+
+                var mng = GetSaveLoadManager<Tmng>();
+                if(mng == null) ProloLogger.LogWarning($"SaveLoadManager returned null");
+                
+                var tmp = mng?.Save(ctrl, data);
+                if(tmp == null) ProloLogger.LogWarning($"SaveLoadManager data returned null");
+
                 post?.Invoke();
                 return tmp;
             }
@@ -1341,8 +1346,13 @@ namespace ProloAPI
             {
                 if(Debug) ProloLogger.LogInfo($"Name of load: {typeof(Tmng).Name}");
                 pre?.Invoke();
-                var tmp = (Tdata)GetSaveLoadManager<Tmng>()?.Load(ctrl, data);
+
+                var mng = GetSaveLoadManager<Tmng>();
+                if(mng == null) ProloLogger.LogWarning($"SaveLoadManager returned null");
+               
+                var tmp = mng?.Load(ctrl, data);
                 if(tmp == null) ProloLogger.LogWarning($"SaveLoadManager value returned null");
+                
                 post?.Invoke();
                 return tmp;
             }

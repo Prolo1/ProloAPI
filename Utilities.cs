@@ -113,8 +113,10 @@ namespace ProloAPI
 #endif
             public static Tmng GetSaveLoadManager<Tmng>() where Tmng : BaseSaveLoadManager
             {
-                if(_saveLoad.Exists((mng) => mng is Tmng))
+                ProloLogger.LogInfo($"{nameof(_saveLoad)} has {_saveLoad.Count} objects currently");
+                if(!_saveLoad.Exists((mng) => mng is Tmng))
                     _saveLoad.Add((Tmng)Activator.CreateInstance(typeof(Tmng)));
+                ProloLogger.LogInfo($"{nameof(_saveLoad)} now has {_saveLoad.Count} objects");
 
                 return (Tmng)_saveLoad.Find((mng) => mng is Tmng);
             }
@@ -347,7 +349,7 @@ namespace ProloAPI
 
                     Rect tmp = new Rect((Rect)draw.BoxedValue);
                     GUILayout.BeginHorizontal();
-                                        
+
 
                     GUILayout.Label("X", GUILayout.ExpandWidth(false));
                     //tmp.x = GUILayout.HorizontalSlider(tmp.x, 0, Screen.width, GUILayout.ExpandWidth(true));
