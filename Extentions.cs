@@ -54,14 +54,7 @@ using static BepInEx.Logging.LogLevel;
 using static UnityEngine.GUI;
 
 using System.Runtime.CompilerServices;
-
-using BodyDouble;
-
-using System.CodeDom;
-
 using KKAPI.Studio.UI.Toolbars;
-
-using Illusion.Game;
 namespace ProloAPI
 {
 
@@ -903,7 +896,7 @@ namespace ProloAPI
                 {
                     if(!gui1.ButtonObject)
                         while(!gui1.ButtonObject)
-                            yield return null;//the thing needs to exist first
+                            yield return new WaitForEndOfFrame();//the thing needs to exist first
 
                     act1(gui);
 
