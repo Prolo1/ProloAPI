@@ -1365,9 +1365,17 @@ namespace ProloAPI
             public static void ForceInvokeCoordBeingLoaded(this ChaControl ctrl, ChaFileCoordinate coord)
                 => Utilities.PGeneral.ForceInvokeCoordBeingLoaded(coord, ctrl);
 
+            /// <summary>
+            /// Force the extra data of a character card to load again
+            /// </summary>
+            /// <param name="control"></param>
             public static void ForceInvokeOnReload(this CharaCustomFunctionController ctrl)
                 => ctrl.ChaControl.ForceInvokeOnReload();
 
+            /// <summary>
+            /// Force the extra data of a character card to load again
+            /// </summary>
+            /// <param name="control"></param>
             public static void ForceInvokeOnReload(this ChaControl ctrl)
                 => Utilities.PGeneral.ForceInvokeOnReload(ctrl);
 
